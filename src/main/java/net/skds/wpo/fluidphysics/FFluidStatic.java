@@ -7,24 +7,17 @@ import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
 
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.item.enchantment.EnchantmentHelper;
+import net.minecraft.world.item.enchantment.Enchantments;
+import net.minecraft.world.level.block.*;
+import net.minecraft.world.level.material.*;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import it.unimi.dsi.fastutil.longs.Long2ObjectLinkedOpenHashMap;
-import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.block.LiquidBlock;
-import net.minecraft.world.level.block.LiquidBlockContainer;
-import net.minecraft.world.level.block.SimpleWaterloggedBlock;
 import net.minecraft.world.level.block.piston.PistonStructureResolver;
-import net.minecraft.world.level.block.SpongeBlock;
-import net.minecraft.world.level.block.WetSpongeBlock;
-import net.minecraft.world.level.material.PushReaction;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.level.material.FlowingFluid;
-import net.minecraft.world.level.material.Fluid;
-import net.minecraft.world.level.material.FluidState;
-import net.minecraft.world.level.material.Fluids;
-import net.minecraft.world.level.material.WaterFluid;
 import net.minecraft.world.item.MobBucketItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -1335,6 +1328,12 @@ public class FFluidStatic {
 		Block nb = newState.getBlock();
 		if (fs.isEmpty() || nb instanceof SpongeBlock || nb instanceof WetSpongeBlock) {
 			return;
+		}
+		// frost walker replaces water with water (idk why) => delete water (since it is created again from melting ice)
+		// idk when FrostedIceBlock is placed...
+		int frostWalkerLevel = EnchantmentHelper.getEnchantmentLevel(Enchantments.FROST_WALKER, (LivingEntity) e.getEntity());
+		if (frostWalkerLevel > 0 && nb == Blocks.WATER && newState.getMaterial() == Material.WATER){
+			return; // does not create water since frost walker does not trigger on partially filled water blocks
 		}
 		if (nb instanceof LiquidBlockContainer && !(nb instanceof SimpleWaterloggedBlock)) {
 			return;

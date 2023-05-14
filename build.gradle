@@ -25,7 +25,7 @@ var mc_version = '1.17.1'
 var forge_version = '37.1.1'
 var modid = 'wpo'
 group = 'net.skds.wpo'
-version = '0.2.0'
+version = '0.2.1'
 archivesBaseName = "water_physics_overhaul-${mc_version}"
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(16)
@@ -118,8 +118,7 @@ repositories {
 
 dependencies {
     minecraft "net.minecraftforge:forge:${mc_version}-${forge_version}"
-    implementation fg.deobf("skds:skds_core-0.2.0:0.2.0")
-//    implementation fg.deobf("skds:skds_core-${mc_version}-0.2.0:0.2.0")
+    implementation fg.deobf("skds:skds_core-${mc_version}-0.2.0:0.2.0")
     annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
 }
 
