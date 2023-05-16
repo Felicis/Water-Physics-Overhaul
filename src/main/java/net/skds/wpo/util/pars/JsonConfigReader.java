@@ -12,6 +12,7 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -36,8 +37,7 @@ import net.skds.wpo.util.pars.ParsApplier.ParsGroup;
 public class JsonConfigReader {
 
 	File fileF;
-
-	File dir = new File(System.getProperty("user.dir") + "\\config\\" + WPO.MOD_ID);
+	File dir = Paths.get(System.getProperty("user.dir"), "config", WPO.MOD_ID).toFile();
 	Set<Map.Entry<String, JsonElement>> blockListSet = new HashSet<>();
 	Set<Map.Entry<String, JsonElement>> propertyListSet = new HashSet<>();
 	Map<String, JsonElement> propertyListMap = new HashMap<>();
@@ -83,7 +83,7 @@ public class JsonConfigReader {
 			}
 		}
 		BufferedInputStream is = new BufferedInputStream(
-				WPO.class.getClassLoader().getResourceAsStream(WPO.MOD_ID + "\\special\\fluids.json"));
+				WPO.class.getClassLoader().getResourceAsStream(Paths.get(WPO.MOD_ID, "special", "fluids.json").toString()));
 		boolean ex = fileF.exists();
 		if (ex) {
 			fileF.delete();

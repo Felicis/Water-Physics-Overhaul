@@ -1,6 +1,7 @@
 package net.skds.wpo;
 
 import java.io.File;
+import java.nio.file.Paths;
 
 import org.apache.commons.lang3.tuple.Pair;
 
@@ -32,8 +33,7 @@ public class WPOConfig {
     }
 
     public static void init() {
-        File dir = new File(System.getProperty("user.dir") + "\\config\\" + WPO.MOD_ID);        
-		dir.mkdir();
+        Paths.get(System.getProperty("user.dir"), "config", WPO.MOD_ID).toFile().mkdir();
         ModLoadingContext.get().registerConfig(Type.COMMON, SPEC, WPO.MOD_ID + "/common.toml");
         //ModLoadingContext.get().registerConfig(Type.COMMON, SPEC_WL, PhysEX.MOD_ID + "/waterlogged.toml");
     }
