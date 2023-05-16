@@ -7,17 +7,14 @@ import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
 
+import net.minecraft.block.*;
+import net.minecraft.block.material.Material;
+import net.minecraft.enchantment.EnchantmentHelper;
+import net.minecraft.enchantment.Enchantments;
+import net.minecraft.entity.LivingEntity;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import it.unimi.dsi.fastutil.longs.Long2ObjectLinkedOpenHashMap;
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.FlowingFluidBlock;
-import net.minecraft.block.ILiquidContainer;
-import net.minecraft.block.IWaterLoggable;
-import net.minecraft.block.PistonBlockStructureHelper;
-import net.minecraft.block.SpongeBlock;
-import net.minecraft.block.WetSpongeBlock;
 import net.minecraft.block.material.PushReaction;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.fluid.FlowingFluid;
@@ -1330,6 +1327,12 @@ public class FFluidStatic {
 		Block nb = newState.getBlock();
 		if (fs.isEmpty() || nb instanceof SpongeBlock || nb instanceof WetSpongeBlock) {
 			return;
+		}
+		// frost walker replaces water with water (idk why) => delete water (since it is created again from melting ice)
+		// idk when FrostedIceBlock is placed...
+		int frostWalkerLevel = EnchantmentHelper.getEnchantmentLevel(Enchantments.FROST_WALKER, (LivingEntity) e.getEntity());
+		if (frostWalkerLevel > 0 && nb == Blocks.WATER && newState.getMaterial() == Material.WATER){
+			return; // does not create water since frost walker does not trigger on partially filled water blocks
 		}
 		if (nb instanceof ILiquidContainer && !(nb instanceof IWaterLoggable)) {
 			return;
