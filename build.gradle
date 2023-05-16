@@ -1,47 +1,128 @@
 buildscript {
     repositories {
-        maven { 
+        maven {
             name = 'forge'
-            url = 'https://files.minecraftforge.net/maven' 
+            url = 'https://files.minecraftforge.net/maven'
         }
         maven {
            name = 'sponge'
            url = 'https://repo.spongepowered.org/maven'
         }
+        maven { url = 'https://maven.parchmentmc.org' }
         mavenCentral()
     }
     dependencies {
         classpath group: 'net.minecraftforge.gradle', name: 'ForgeGradle', version: '5.1.+', changing: true
         classpath 'org.spongepowered:mixingradle:0.7.+'
+        classpath 'org.parchmentmc:librarian:1.+'
     }
 }
 apply plugin: 'net.minecraftforge.gradle'
 apply plugin: 'org.spongepowered.mixin'
+apply plugin: 'org.parchmentmc.librarian.forgegradle'
 
-version = '0.1.2'
+var mc_version = '1.16.5'
+var forge_version = '36.0.14'
+var modid = 'wpo'
 group = 'net.skds.wpo'
-archivesBaseName = 'water_physics_overhaul'
+version = '0.1.2'
+archivesBaseName = "water_physics_overhaul-${mc_version}"
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(8) // Mojang ships Java 8 to end users, so your mod should target Java 8.
 
 println('Java: ' + System.getProperty('java.version') + ' JVM: ' + System.getProperty('java.vm.version') + '(' + System.getProperty('java.vendor') + ') Arch: ' + System.getProperty('os.arch'))
 minecraft {
+//    mappings channel: 'official', version: "${mc_version}"
+    mappings channel: 'parchment', version: "2022.03.06-${mc_version}"
 
-    mappings channel: 'official', version: '1.16.5'
+    runs {
+        client {
+            workingDirectory project.file('run')
 
+            // Recommended logging data for a userdev environment
+            // The markers can be changed as needed.
+            // "SCAN": For mods scan.
+            // "REGISTRIES": For firing of registry events.
+            // "REGISTRYDUMP": For getting the contents of all registries.
+            property 'forge.logging.markers', 'SCAN,REGISTRIES,REGISTRYDUMP'
+
+            // Recommended logging level for the console
+            // You can set various levels here.
+            // Please read: https://stackoverflow.com/questions/2031163/when-to-use-the-different-log-levels
+            property 'forge.logging.console.level', 'debug'
+
+            mods {
+                wpo {
+                    source sourceSets.main
+                }
+            }
+        }
+
+        server {
+            workingDirectory project.file('server')
+
+            // Recommended logging data for a userdev environment
+            // The markers can be changed as needed.
+            // "SCAN": For mods scan.
+            // "REGISTRIES": For firing of registry events.
+            // "REGISTRYDUMP": For getting the contents of all registries.
+            property 'forge.logging.markers', 'SCAN,REGISTRIES,REGISTRYDUMP'
+
+            // Recommended logging level for the console
+            // You can set various levels here.
+            // Please read: https://stackoverflow.com/questions/2031163/when-to-use-the-different-log-levels
+            property 'forge.logging.console.level', 'debug'
+
+            mods {
+                wpo {
+                    source sourceSets.main
+                }
+            }
+        }
+
+        data {
+            workingDirectory project.file('run')
+
+            // Recommended logging data for a userdev environment
+            // The markers can be changed as needed.
+            // "SCAN": For mods scan.
+            // "REGISTRIES": For firing of registry events.
+            // "REGISTRYDUMP": For getting the contents of all registries.
+            property 'forge.logging.markers', 'SCAN,REGISTRIES,REGISTRYDUMP'
+
+            // Recommended logging level for the console
+            // You can set various levels here.
+            // Please read: https://stackoverflow.com/questions/2031163/when-to-use-the-different-log-levels
+            property 'forge.logging.console.level', 'debug'
+
+            // Specify the modid for data generation, where to output the resulting resource, and where to look for existing resources.
+            args '--mod', 'wpo', '--all', '--output', file('src/generated/resources/'), '--existing', file('src/main/resources/')
+
+            mods {
+                wpo {
+                    source sourceSets.main
+                }
+            }
+        }
+    }
 }
 
+repositories {
+    flatDir {
+        dir 'libs'
+    }
+}
 
 dependencies {
-    minecraft 'net.minecraftforge:forge:1.16.5-36.0.14'
+    minecraft "net.minecraftforge:forge:${mc_version}-${forge_version}"
     annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
-    implementation fg.deobf(fileTree(dir: 'lib', include: ['*.jar']))
+    implementation fg.deobf("skds:skds_core-${mc_version}-0.1.1:0.1.1")
 }
 
 jar {
     manifest {
         attributes([
-            "MixinConfigs": "mixins.wpo.json",
+            "MixinConfigs": "mixins.${modid}.json",
             "Implementation-Title": project.name,
             "Implementation-Version": project.version,
         ])
@@ -51,6 +132,6 @@ jar {
 //jar.finalizedBy('reobfJar') 
 
 mixin {
-    add sourceSets.main, 'mixins.wpo.refmap.json'
-    config 'mixins.wpo.json'
+    add sourceSets.main, "mixins.${modid}.refmap.json"
+    config "mixins.${modid}.json"
 }
