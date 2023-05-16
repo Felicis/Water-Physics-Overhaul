@@ -1,13 +1,7 @@
 buildscript {
     repositories {
-        maven {
-            name = 'forge'
-            url = 'https://files.minecraftforge.net/maven'
-        }
-        maven {
-           name = 'sponge'
-           url = 'https://repo.spongepowered.org/maven'
-        }
+        maven { url = 'https://maven.minecraftforge.net' }
+        maven { url = 'https://repo.spongepowered.org/maven' }
         maven { url = 'https://maven.parchmentmc.org' }
         mavenCentral()
     }
@@ -21,19 +15,16 @@ apply plugin: 'net.minecraftforge.gradle'
 apply plugin: 'org.spongepowered.mixin'
 apply plugin: 'org.parchmentmc.librarian.forgegradle'
 
-var mc_version = '1.16.5'
-var forge_version = '36.0.14'
 var modid = 'wpo'
 group = 'net.skds.wpo'
-version = '0.1.2'
-archivesBaseName = "water_physics_overhaul-${mc_version}"
+archivesBaseName = 'water_physics_overhaul'
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(8) // Mojang ships Java 8 to end users, so your mod should target Java 8.
 
 println('Java: ' + System.getProperty('java.version') + ' JVM: ' + System.getProperty('java.vm.version') + '(' + System.getProperty('java.vendor') + ') Arch: ' + System.getProperty('os.arch'))
 minecraft {
 //    mappings channel: 'official', version: "${mc_version}"
-    mappings channel: 'parchment', version: "2022.03.06-${mc_version}"
+    mappings channel: 'parchment', version: "${parchment_version}"
 
     runs {
         client {
@@ -116,7 +107,7 @@ repositories {
 dependencies {
     minecraft "net.minecraftforge:forge:${mc_version}-${forge_version}"
     annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
-    implementation fg.deobf("skds:skds_core-${mc_version}-0.1.1:0.1.1")
+    implementation fg.deobf("skds:skds_core-${skds_core_version}:${skds_core_version}")
 }
 
 jar {
