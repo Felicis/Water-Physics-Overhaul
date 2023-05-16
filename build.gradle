@@ -1,13 +1,7 @@
 buildscript {
     repositories {
-        maven { 
-            name = 'forge'
-            url = 'https://files.minecraftforge.net/maven' 
-        }
-        maven {
-           name = 'sponge'
-           url = 'https://repo.spongepowered.org/maven'
-        }
+        maven { url = 'https://maven.minecraftforge.net' }
+        maven { url = 'https://repo.spongepowered.org/maven' }
         maven { url = 'https://maven.parchmentmc.org' }
         mavenCentral()
     }
@@ -33,6 +27,7 @@ java.toolchain.languageVersion = JavaLanguageVersion.of(16)
 println('Java: ' + System.getProperty('java.version') + ' JVM: ' + System.getProperty('java.vm.version') + '(' + System.getProperty('java.vendor') + ') Arch: ' + System.getProperty('os.arch'))
 minecraft {
     mappings channel: 'parchment', version: "2021.12.12-${mc_version}"
+//    mappings channel: 'official', version: "${mc_version}"
 
     // Default run configurations.
     // These can be tweaked, removed, or duplicated as needed.
