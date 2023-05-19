@@ -22,23 +22,26 @@ import net.skds.wpo.fluidphysics.FFluidStatic;
 import net.skds.wpo.registry.BlockStateProps;
 import net.skds.wpo.util.interfaces.IBaseWL;
 
+import static net.minecraft.state.properties.BlockStateProperties.WATERLOGGED;
+import static net.skds.wpo.registry.BlockStateProps.FFLUID_LEVEL;
+
 @Mixin(value = { AbstractBlockState.class })
 public abstract class AbstractBlockStateMixin {
 
 	@Inject(method = "getFluidState", at = @At(value = "HEAD"), cancellable = true)
 	public void getFluidStateM(CallbackInfoReturnable<FluidState> ci) {
 		BlockState bs = (BlockState) (Object) this;
-		if (bs.getBlock() instanceof IBaseWL) {
-			int level = bs.getValue(BlockStateProps.FFLUID_LEVEL);
+		if (bs.hasProperty(WATERLOGGED) && bs.hasProperty(FFLUID_LEVEL)) {
+			int level = bs.getValue(FFLUID_LEVEL);
 			FluidState fs;
-			if (bs.getValue(BlockStateProperties.WATERLOGGED)) {
-				level = (level == 0) ? WPOConfig.MAX_FLUID_LEVEL : level;
+			if (bs.getValue(WATERLOGGED)) {
+				level = (level == 0) ? WPOConfig.MAX_FLUID_LEVEL : level; // why this?
 				if (level >= WPOConfig.MAX_FLUID_LEVEL) {
-					fs = ((FlowingFluid) Fluids.WATER).getSource(false);
+					fs = Fluids.WATER.getSource(false);
 				} else if (level <= 0) {
 					fs = Fluids.EMPTY.defaultFluidState();
 				} else {
-					fs = ((FlowingFluid) Fluids.WATER).getFlowing(level, false);
+					fs = Fluids.WATER.getFlowing(level, false);
 				}
 			} else {
 				fs = Fluids.EMPTY.defaultFluidState();
@@ -56,30 +59,30 @@ public abstract class AbstractBlockStateMixin {
 	public void neighborChangedM(World worldIn, BlockPos posIn, Block blockIn, BlockPos fromPosIn, boolean isMoving,
 			CallbackInfo ci) {
 		// super.neighborChanged(worldIn, posIn, blockIn, fromPosIn, isMoving);
-		if (((BlockState) (Object) this).getBlock() instanceof IBaseWL) {
-			BlockState s = (BlockState) (Object) this;
-			fixFFLNoWL((World) worldIn, s, posIn);
-			if (s.getValue(BlockStateProperties.WATERLOGGED))
-				worldIn.getLiquidTicks().scheduleTick(posIn, s.getFluidState().getType(),
-						FFluidStatic.getTickRate((FlowingFluid) s.getFluidState().getType(), worldIn));
+		BlockState thisBS = (BlockState) (Object) this;
+		if (thisBS.hasProperty(WATERLOGGED) && thisBS.hasProperty(FFLUID_LEVEL)) {
+			fixFFLNoWL(worldIn, thisBS, posIn);
+			if (thisBS.getValue(WATERLOGGED))
+				worldIn.getLiquidTicks().scheduleTick(posIn, thisBS.getFluidState().getType(),
+						FFluidStatic.getTickRate((FlowingFluid) thisBS.getFluidState().getType(), worldIn));
 		}
 	}
 
 	@Inject(method = "updateShape", at = @At(value = "HEAD"), cancellable = false)
 	public void updateShapeM(Direction face, BlockState queried, IWorld worldIn, BlockPos currentPos,
 			BlockPos offsetPos, CallbackInfoReturnable<BlockState> ci) {
-		if (((BlockState) (Object) this).getBlock() instanceof IBaseWL) {
-			BlockState s = (BlockState) (Object) this;
-			fixFFLNoWL(worldIn, s, currentPos);
-			if (s.getValue(BlockStateProperties.WATERLOGGED))
-				worldIn.getLiquidTicks().scheduleTick(currentPos, s.getFluidState().getType(),
-						FFluidStatic.getTickRate((FlowingFluid) s.getFluidState().getType(), worldIn));
+		BlockState thisBS = (BlockState) (Object) this;
+		if (thisBS.hasProperty(WATERLOGGED) && thisBS.hasProperty(FFLUID_LEVEL)) {
+			fixFFLNoWL(worldIn, thisBS, currentPos);
+			if (thisBS.getValue(WATERLOGGED))
+				worldIn.getLiquidTicks().scheduleTick(currentPos, thisBS.getFluidState().getType(),
+						FFluidStatic.getTickRate((FlowingFluid) thisBS.getFluidState().getType(), worldIn));
 		}
 	}
 
 	private void fixFFLNoWL(IWorld w, BlockState s, BlockPos p) {
-		if (!s.getValue(BlockStateProperties.WATERLOGGED) && s.getValue(BlockStateProps.FFLUID_LEVEL) > 0) {
-			w.setBlock(p, s.setValue(BlockStateProps.FFLUID_LEVEL, 0), 3);
+		if (!s.getValue(WATERLOGGED) && s.getValue(FFLUID_LEVEL) > 0) {
+			w.setBlock(p, s.setValue(FFLUID_LEVEL, 0), 3);
 		}
 	}
 }

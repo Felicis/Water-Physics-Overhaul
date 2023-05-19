@@ -99,15 +99,15 @@ minecraft {
 }
 
 repositories {
-    flatDir {
-        dir 'libs'
-    }
+    maven { url = "https://jitpack.io" }
+    flatDir { dir 'libs' }
 }
 
 dependencies {
     minecraft "net.minecraftforge:forge:${mc_version}-${forge_version}"
     annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
     implementation fg.deobf("skds:skds_core-${skds_core_version}:${skds_core_version}")
+    implementation fg.deobf("com.github.Virtuoel:Statement:${statement_version}")
 }
 
 jar {

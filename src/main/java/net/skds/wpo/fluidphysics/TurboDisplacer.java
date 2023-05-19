@@ -6,11 +6,16 @@ import net.minecraft.block.IWaterLoggable;
 import net.minecraft.fluid.Fluid;
 import net.minecraft.fluid.FluidState;
 import net.minecraft.fluid.Fluids;
+import net.minecraft.state.properties.BlockStateProperties;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.server.ServerWorld;
 import net.skds.wpo.WPOConfig;
 import net.skds.wpo.fluidphysics.FFluidStatic.FluidDisplacer2;
+import net.skds.wpo.registry.BlockStateProps;
 import net.skds.wpo.util.interfaces.IBaseWL;
+
+import static net.minecraft.state.properties.BlockStateProperties.WATERLOGGED;
+import static net.skds.wpo.registry.BlockStateProps.FFLUID_LEVEL;
 
 public class TurboDisplacer {
 
@@ -19,29 +24,18 @@ public class TurboDisplacer {
 		//World w = (World) w;
 		//BlockPos pos = e.getPos();
 		//BlockState oldState = w.getBlockState(pos);
-		FluidState fs = oldState.getFluidState();
+		FluidState oldFS = oldState.getFluidState();
 		//FluidState nfs = newState.getFluidState();
-		Fluid f = fs.getType();
+		Fluid oldFluid = oldFS.getType();
 		//BlockState newState = e.getPlacedBlock();
-		Block nb = newState.getBlock();
-		int level = fs.getAmount();
+		Block newBlock = newState.getBlock();
+		int oldLvl = oldFS.getAmount();
 		//int nlevel = nfs.getLevel();
-		if (fs.isEmpty()) {
+		if (oldFS.isEmpty()) {
 			return;
 		}
-		if (nb instanceof IWaterLoggable && f.isSame(Fluids.WATER)) {
-			if (level == WPOConfig.MAX_FLUID_LEVEL) {
-				w.setBlock(pos, FFluidStatic.getUpdatedState(newState, level, f), 3);
-				return;
-			} else if (nb instanceof IBaseWL) {				
-				w.setBlock(pos, FFluidStatic.getUpdatedState(newState, level, f), 3);
-				return;
-			}
-		}
-		
-		if (!FFluidStatic.canOnlyFullCube(newState) && nb instanceof IBaseWL && f.isSame(Fluids.WATER)) {
-			newState = FFluidStatic.getUpdatedState(newState, fs.getAmount(), Fluids.WATER);
-			w.setBlockAndUpdate(pos, newState);
+		if (newState.hasProperty(WATERLOGGED)) {
+			w.setBlock(pos, FFluidStatic.getUpdatedState(newState, oldLvl, oldFluid), 3);
 			return;
 		}
 

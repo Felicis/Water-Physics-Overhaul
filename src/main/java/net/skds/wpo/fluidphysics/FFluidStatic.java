@@ -1,44 +1,22 @@
 package net.skds.wpo.fluidphysics;
 
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Optional;
-import java.util.Random;
-import java.util.Set;
-
+import it.unimi.dsi.fastutil.longs.Long2ObjectLinkedOpenHashMap;
 import net.minecraft.block.*;
 import net.minecraft.block.material.Material;
+import net.minecraft.block.material.PushReaction;
 import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.enchantment.Enchantments;
 import net.minecraft.entity.LivingEntity;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
-
-import it.unimi.dsi.fastutil.longs.Long2ObjectLinkedOpenHashMap;
-import net.minecraft.block.material.PushReaction;
 import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.fluid.FlowingFluid;
-import net.minecraft.fluid.Fluid;
-import net.minecraft.fluid.FluidState;
-import net.minecraft.fluid.Fluids;
-import net.minecraft.fluid.WaterFluid;
+import net.minecraft.fluid.*;
 import net.minecraft.item.FishBucketItem;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
-import net.minecraft.state.properties.BlockStateProperties;
 import net.minecraft.stats.Stats;
 import net.minecraft.tags.FluidTags;
-import net.minecraft.util.ActionResult;
-import net.minecraft.util.Direction;
-import net.minecraft.util.Hand;
-import net.minecraft.util.SoundEvent;
-import net.minecraft.util.SoundEvents;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.BlockRayTraceResult;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.math.RayTraceContext;
-import net.minecraft.util.math.RayTraceResult;
+import net.minecraft.util.*;
+import net.minecraft.util.math.*;
 import net.minecraft.util.math.shapes.VoxelShape;
 import net.minecraft.util.math.shapes.VoxelShapes;
 import net.minecraft.util.math.vector.Vector3d;
@@ -55,14 +33,18 @@ import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandler.FluidAction;
 import net.minecraftforge.fluids.capability.IFluidHandlerItem;
-import net.skds.wpo.WPOConfig;
-import net.skds.wpo.registry.BlockStateProps;
-import net.skds.wpo.util.ExtendedFHIS;
-import net.skds.wpo.util.interfaces.IBaseWL;
 import net.skds.core.api.IBlockExtended;
 import net.skds.core.api.IWWSG;
 import net.skds.core.api.IWorldExtended;
+import net.skds.wpo.WPOConfig;
+import net.skds.wpo.util.ExtendedFHIS;
 import net.skds.wpo.util.pars.FluidPars;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+
+import java.util.*;
+
+import static net.minecraft.state.properties.BlockStateProperties.WATERLOGGED;
+import static net.skds.wpo.registry.BlockStateProps.FFLUID_LEVEL;
 
 public class FFluidStatic {
 
@@ -101,34 +83,37 @@ public class FFluidStatic {
 		return dirs;
 	}
 
+	/**
+	 * Applies newlevel and fluid to state: waterlogs or creates water block
+	 *
+	 * if block can not be waterlogged WILL DESTROY BLOCK!
+	 * @param state0
+	 * @param newlevel
+	 * @param fluid
+	 * @return
+	 */
 	public static BlockState getUpdatedState(BlockState state0, int newlevel, Fluid fluid) {
 		if ((newlevel < 0) || (newlevel > WPOConfig.MAX_FLUID_LEVEL)) {
 			throw new RuntimeException("Incorrect fluid level!!!");
 		}
-		if (FFluidStatic.canOnlyFullCube(state0) && fluid instanceof WaterFluid) {
-			if (newlevel >= 1) {
-				return state0.setValue(BlockStateProperties.WATERLOGGED, true);
+		if (state0.hasProperty(WATERLOGGED)) {
+			boolean hasWater = newlevel >= 1;
+			if (state0.hasProperty(FFLUID_LEVEL)){
+				return state0.setValue(WATERLOGGED, hasWater).setValue(FFLUID_LEVEL, newlevel);
 			} else {
-				return state0.setValue(BlockStateProperties.WATERLOGGED, false);
+				return state0.setValue(WATERLOGGED, hasWater); // TODO: this duplicates water
 			}
 		}
-		if (state0.getBlock() instanceof IBaseWL && fluid instanceof WaterFluid) {
-			if (newlevel >= 1) {
-				return state0.setValue(BlockStateProperties.WATERLOGGED, true).setValue(BlockStateProps.FFLUID_LEVEL, newlevel);
-			} else {
-				return state0.setValue(BlockStateProperties.WATERLOGGED, false).setValue(BlockStateProps.FFLUID_LEVEL,
-						newlevel);
-			}
-		}
-		FluidState fs2;
+		// this here destroys non-waterlogged blocks!!!
+		FluidState fsWithoutBlock;
 		if (newlevel >= WPOConfig.MAX_FLUID_LEVEL) {
-			fs2 = ((FlowingFluid) fluid).getSource(false);
+			fsWithoutBlock = ((FlowingFluid) fluid).getSource(false);
 		} else if (newlevel <= 0) {
-			fs2 = Fluids.EMPTY.defaultFluidState();
+			fsWithoutBlock = Fluids.EMPTY.defaultFluidState();
 		} else {
-			fs2 = ((FlowingFluid) fluid).getFlowing(newlevel, false);
+			fsWithoutBlock = ((FlowingFluid) fluid).getFlowing(newlevel, false);
 		}
-		return fs2.createLegacyBlock();
+		return fsWithoutBlock.createLegacyBlock();
 	}
 
 	public static float getHeight(int level) {
@@ -492,7 +477,7 @@ public class FFluidStatic {
 	private static boolean canReach(IBlockReader world, BlockPos pos, Direction direction) {
 		BlockState state1 = world.getBlockState(pos);
 		BlockState state2 = world.getBlockState(pos.relative(direction));
-		if (state2.canOcclude() && !(state2.getBlock() instanceof IWaterLoggable)) {
+		if (state2.canOcclude() && !state2.hasProperty(WATERLOGGED)) {
 			return false;
 		}
 		VoxelShape voxelShape2 = state2.getCollisionShape(world, pos.relative(direction));
@@ -533,11 +518,10 @@ public class FFluidStatic {
 				return true;
 		}
 
-		if (state2.canOcclude() && !posos && !(state2.getBlock() instanceof IWaterLoggable)) {
+		if (state2.canOcclude() && !posos && !state2.hasProperty(WATERLOGGED)) {
 			return false;
 		}
-		if (!(fluid instanceof WaterFluid)
-				&& (state1.getBlock() instanceof IWaterLoggable || state2.getBlock() instanceof IWaterLoggable)) {
+		if (!(fluid instanceof WaterFluid) && (state1.hasProperty(WATERLOGGED) || state2.hasProperty(WATERLOGGED))) {
 			return false;
 		}
 		VoxelShape voxelShape2 = state2.getCollisionShape(w, pos2);
@@ -548,12 +532,8 @@ public class FFluidStatic {
 		return !VoxelShapes.mergedFaceOccludes(voxelShape1, voxelShape2, dir);
 	}
 
-	public static boolean canOnlyFullCube(BlockState bs) {
-		return canOnlyFullCube(bs.getBlock());
-	}
-
-	public static boolean canOnlyFullCube(Block b) {
-		return (b instanceof IWaterLoggable) ? !(b instanceof IBaseWL) : false;
+	public static boolean canOnlyFullCube(BlockState bs){
+		return bs.hasProperty(WATERLOGGED) && ! bs.hasProperty(FFLUID_LEVEL);
 	}
 
 	// ================= ITEMS ==================//
@@ -575,64 +555,51 @@ public class FFluidStatic {
 			bh = new ExtendedFHIS(bucket, 1000);
 			// System.out.println("l;hhhhhhh " + bh);
 		}
-		Fluid f = bh.getFluidInTank(0).getFluid();
-		if (!(f instanceof FlowingFluid) && f != Fluids.EMPTY) {
+		Fluid bucketFluid = bh.getFluidInTank(0).getFluid();
+		if (!(bucketFluid instanceof FlowingFluid) && bucketFluid != Fluids.EMPTY) {
 			return;
 		}
 		PlayerEntity p = e.getPlayer();
 		World w = e.getWorld();
-		RayTraceResult targ0 = e.getTarget();
-		RayTraceResult targ = rayTrace(w, p,
-				f == Fluids.EMPTY ? RayTraceContext.FluidMode.ANY : RayTraceContext.FluidMode.NONE);
-		targ0 = targ;
+		BlockRayTraceResult targ = rayTrace(w, p,
+				bucketFluid == Fluids.EMPTY ? RayTraceContext.FluidMode.ANY : RayTraceContext.FluidMode.NONE);
 		if (targ.getType() != RayTraceResult.Type.BLOCK) {
 			return;
 		}
-		BlockRayTraceResult targB = (BlockRayTraceResult) targ;
-		BlockPos pos = targB.getBlockPos();
+		BlockPos pos = targ.getBlockPos();
 		BlockState bs = w.getBlockState(pos);
 		FluidState fs = bs.getFluidState();
-		if (fs.isEmpty() && f != Fluids.EMPTY && !(bs.getBlock() instanceof IWaterLoggable)) {
-			pos = pos.relative(targB.getDirection());
-			bs = w.getBlockState(pos);
-			fs = bs.getFluidState();
-		} 
-		if (!w.isClientSide && f != Fluids.EMPTY && bs.getBlock() instanceof IWaterLoggable) {
-			FluidTasksManager.addFluidTask((ServerWorld) w, pos, bs);
-		}
-		Fluid fluid = fs.getType();
-		if ((!f.isSame(Fluids.WATER) && f != Fluids.EMPTY) && bs.getBlock() instanceof IWaterLoggable) {
-
+		Fluid blockFluid = fs.getType();
+		// if target block not interactable OR item not usable on target block
+		if (!(w.mayInteract(p, pos) && p.mayUseItemAt(pos, targ.getDirection(), bh.getContainer()))) {
 			return;
 		}
 
-		if (!(w.mayInteract(p, pos) && p.mayUseItemAt(pos, targB.getDirection(), bh.getContainer()))) {
-			return;
-		}
-
-		if (f == Fluids.EMPTY) {
-			if (!(fluid instanceof FlowingFluid)) {
+		if (bucketFluid == Fluids.EMPTY) { // PICK UP
+			if (blockFluid == Fluids.EMPTY) {
+				return; // nothing to pick up
+			}
+			// pick up
+			BucketFiller filler = new BucketFiller(w, blockFluid, bh, e);
+			iterateFluidWay(WPOConfig.COMMON.maxBucketDist.get(), pos, filler); // why not equalize greater area?
+		} else { // PLACE
+			// if block cannot accept water => try next block towards player (e.g. place water against wall)
+			if (fs.isEmpty() && !bs.hasProperty(WATERLOGGED)) {
+				pos = pos.relative(targ.getDirection());
+				bs = w.getBlockState(pos);
+			}
+			if (!w.isClientSide && bs.hasProperty(WATERLOGGED)) {
+				FluidTasksManager.addFluidTask((ServerWorld) w, pos, bs);
+			}
+			if (!bucketFluid.isSame(blockFluid) && blockFluid != Fluids.EMPTY) {
+				e.setCanceled(true); // cannot place fluid into a different fluid
 				return;
 			}
-			if (targ0.getType() == RayTraceResult.Type.BLOCK) {
-				BlockRayTraceResult targB0 = (BlockRayTraceResult) targ0;
-				FluidState fs0 = w.getFluidState(targB0.getBlockPos());
-				if (fs0.isSource()) {
-					return;
-				}
-			}
-			BucketFiller filler = new BucketFiller(w, fluid, bh, e);
-			iterateFluidWay(WPOConfig.COMMON.maxBucketDist.get(), pos, filler);
-
-		} else {
-			if (!f.isSame(fluid) && fluid != Fluids.EMPTY) {
-				e.setCanceled(true);
-				return;
-			}
-			BucketFlusher flusher = new BucketFlusher(w, f, bh, e);
+			// place fluid
+			BucketFlusher flusher = new BucketFlusher(w, bucketFluid, bh, e);
 			if (iterateFluidWay(WPOConfig.COMMON.maxBucketDist.get(), pos, flusher) && fishItem != null) {
 				fishItem.checkExtraContent(w, bucket, pos);
-			}			
+			}
 		}
 	}
 
@@ -654,13 +621,14 @@ public class FFluidStatic {
 	}
 
 	public static boolean iterateFluidWay(int maxRange, BlockPos pos, IFluidActionIteratable actioner) {
-		boolean frst = true;
-		boolean client = false;
+		boolean first = true;
+		boolean client;
 		World w = actioner.getWorld();
 		IWWSG wws = ((IWorldExtended) w).getWWS();
 		Set<BlockPos> setBan = new HashSet<>();
 		Set<BlockPos> setAll = new HashSet<>();
-		client = wws == null;
+		client = (wws == null);
+
 		if (!client && setBan.add(pos) && !wws.banPos(pos.asLong())) {
 			setBan.forEach(p -> wws.banPos(p.asLong()));
 			///wws.unbanPoses(setBan);
@@ -674,8 +642,8 @@ public class FFluidStatic {
 			--n;
 			Set<BlockPos> setLocal2 = new HashSet<>();
 			for (BlockPos posn : setLocal) {
-				if (frst) {
-					frst = false;
+				if (first) {
+					first = false;
 					setAll.add(posn);
 					BlockState bs = w.getBlockState(posn);
 					if (!client && setBan.add(posn) && !wws.banPos(posn.asLong())) {
@@ -775,7 +743,7 @@ public class FFluidStatic {
 			// world.addParticle(ParticleTypes.CLOUD, pos.getX() + 0.5, pos.getY() + 0.5,
 			// pos.getZ() + 0.5, 0, 0, 0);
 
-			if (canOnlyFullCube(state) && state.getValue(BlockStateProperties.WATERLOGGED)) {
+			if (canOnlyFullCube(state) && state.getValue(WATERLOGGED)) {
 				states.clear();
 				states.put(pos.asLong(), getUpdatedState(state, 0, fluid));
 				complete = true;
@@ -877,7 +845,7 @@ public class FFluidStatic {
 			// world.addParticle(ParticleTypes.CLOUD, pos.getX() + 0.5, pos.getY() + 0.5,
 			// pos.getZ() + 0.5, 0, 0, 0);
 
-			if (canOnlyFullCube(state) && state.getValue(BlockStateProperties.WATERLOGGED)) {
+			if (canOnlyFullCube(state) && state.getValue(WATERLOGGED)) {
 				states.clear();
 				states.put(pos.asLong(), getUpdatedState(state, 0, fluid));
 				complete = true;
@@ -919,23 +887,21 @@ public class FFluidStatic {
 
 	private static class BucketFlusher implements IFluidActionIteratable {
 
-		int mfl = WPOConfig.MAX_FLUID_LEVEL;
-		int bucketLevels = WPOConfig.MAX_FLUID_LEVEL;
-		int sl = bucketLevels;
+		int maxStateLvl = WPOConfig.MAX_FLUID_LEVEL;
+		int bucketLvl;
 		boolean complete = false;
 		World world;
-		Fluid fluid;
+		Fluid bucketFluid;
 		FillBucketEvent event;
 		IFluidHandlerItem bucket;
 		Long2ObjectLinkedOpenHashMap<BlockState> states = new Long2ObjectLinkedOpenHashMap<>();
 
 		BucketFlusher(World w, Fluid f, IFluidHandlerItem b, FillBucketEvent e) {
 			world = w;
-			fluid = f;
 			bucket = b;
 			event = e;
-			sl = bucket.getFluidInTank(0).getAmount() / FFluidStatic.FCONST;
-			fluid = bucket.getFluidInTank(0).getFluid();
+			bucketLvl = bucket.getFluidInTank(0).getAmount() / FFluidStatic.FCONST;
+			bucketFluid = bucket.getFluidInTank(0).getFluid();
 		}
 
 		@Override
@@ -948,23 +914,36 @@ public class FFluidStatic {
 			// world.addParticle(ParticleTypes.CLOUD, pos.getX() + 0.5, pos.getY() + 0.5,
 			// pos.getZ() + 0.5, 0, 0, 0);
 
-			if (canOnlyFullCube(state) && state.hasProperty(BlockStateProperties.WATERLOGGED) && !state.getValue(BlockStateProperties.WATERLOGGED)) {
+			// only full block & not waterlogged yet
+			if (canOnlyFullCube(state) &&  !state.getValue(WATERLOGGED)) {
 				states.clear();
-				states.put(pos.asLong(), getUpdatedState(state, mfl, fluid));
+				states.put(pos.asLong(), getUpdatedState(state, maxStateLvl, bucketFluid)); // duplicate liquid!!!!
 				complete = true;
 				return;
 			}
+
 			FluidState fs = state.getFluidState();
-			int el = mfl - fs.getAmount();
-			int osl = sl;
-			sl -= el;
-			int nl = mfl;
-			if (sl <= 0) {
-				nl = mfl + sl;
-				complete = true;
+			int stateLvl = fs.getAmount();
+			int freeBlockLvls = maxStateLvl - stateLvl;
+			if (freeBlockLvls <= 0){
+				// block already full
+				return;
+			} else if (freeBlockLvls < bucketLvl){
+				// empty bucket partially
+				int newStateLvl = maxStateLvl;
+				bucketLvl -= freeBlockLvls;
+				states.put(pos.asLong(), getUpdatedState(state, newStateLvl, bucketFluid));
+			} else if (freeBlockLvls >= bucketLvl) {
+				// empty bucket fully
+				int newStateLvl = stateLvl + bucketLvl;
+				bucketLvl = 0;
+				states.put(pos.asLong(), getUpdatedState(state, newStateLvl, bucketFluid));
 			}
-			if (osl != sl)
-				states.put(pos.asLong(), getUpdatedState(state, nl, fluid));
+
+			if (bucketLvl == 0){
+				complete = true;
+				return;
+			}
 		}
 
 		@Override
@@ -974,7 +953,7 @@ public class FFluidStatic {
 
 		@Override
 		public boolean isValidState(BlockState state) {
-			return fluid.isSame(state.getFluidState().getType()) || state.getFluidState().isEmpty();
+			return bucketFluid.isSame(state.getFluidState().getType()) || state.getFluidState().isEmpty();
 		}
 
 		@Override
@@ -985,9 +964,9 @@ public class FFluidStatic {
 			PlayerEntity p = event.getPlayer();
 			Item item = bucket.getContainer().getItem();
 			p.awardStat(Stats.ITEM_USED.get(item));
-			SoundEvent soundevent = fluid.getAttributes().getEmptySound();
+			SoundEvent soundevent = bucketFluid.getAttributes().getEmptySound();
 			if (soundevent == null)
-				soundevent = fluid.is(FluidTags.LAVA) ? SoundEvents.BUCKET_EMPTY_LAVA
+				soundevent = bucketFluid.is(FluidTags.LAVA) ? SoundEvents.BUCKET_EMPTY_LAVA
 						: SoundEvents.BUCKET_EMPTY;
 			p.playSound(soundevent, 1.0F, 1.0F);
 			if (!p.abilities.instabuild) {
@@ -1046,7 +1025,7 @@ public class FFluidStatic {
 			// return;
 			// }
 
-			if (canOnlyFullCube(state) && state.hasProperty(BlockStateProperties.WATERLOGGED) && !state.getValue(BlockStateProperties.WATERLOGGED)) {
+			if (canOnlyFullCube(state) && state.hasProperty(WATERLOGGED) && !state.getValue(WATERLOGGED)) {
 				states.clear();
 				states.put(pos.asLong(), getUpdatedState(state, mfl, fluid));
 				complete = true;
@@ -1132,7 +1111,7 @@ public class FFluidStatic {
 			// return;
 			// }
 
-			if (canOnlyFullCube(state) && state.hasProperty(BlockStateProperties.WATERLOGGED) && !state.getValue(BlockStateProperties.WATERLOGGED)) {
+			if (canOnlyFullCube(state) && state.hasProperty(WATERLOGGED) && !state.getValue(WATERLOGGED)) {
 				states.clear();
 				states.put(pos.asLong(), getUpdatedState(state, mfl, fluid));
 				complete = true;
@@ -1176,7 +1155,7 @@ public class FFluidStatic {
 
 		int mfl = WPOConfig.MAX_FLUID_LEVEL;
 		// int bucketLevels = PhysEXConfig.MAX_FLUID_LEVEL;
-		int sl;
+		int remainingLvl;
 		boolean complete = false;
 		World world;
 		Fluid fluid;
@@ -1184,14 +1163,14 @@ public class FFluidStatic {
 		Set<BlockPos> movepos = new HashSet<>();
 		PistonEvent.Pre event;
 		Long2ObjectLinkedOpenHashMap<BlockState> states = new Long2ObjectLinkedOpenHashMap<>();
-		BlockState obs;
+		BlockState oldBS;
 
 		PistonDisplacer(World w, PistonEvent.Pre e, BlockState os, PistonBlockStructureHelper ps) {
-			this.obs = os;
-			FluidState ofs = obs.getFluidState();
+			this.oldBS = os;
+			FluidState oldFS = oldBS.getFluidState();
 			// this.ps = ps;
-			this.fluid = ofs.getType();
-			this.sl = ofs.getAmount();
+			this.fluid = oldFS.getType();
+			this.remainingLvl = oldFS.getAmount();
 			this.world = w;
 			this.event = e;
 			movepos.addAll(ps.getToDestroy());
@@ -1212,7 +1191,7 @@ public class FFluidStatic {
 			for (Direction d : getRandomizedDirections(world.getRandom(), true)) {
 				BlockPos pos2 = p0.relative(d);
 				BlockState state2 = world.getBlockState(pos2);
-				if (isValidState(state2) && canReach(p0, pos2, obs, state2, fluid, world)) {
+				if (isValidState(state2) && canReach(p0, pos2, oldBS, state2, fluid, world)) {
 					set.add(pos2);
 				}
 			}
@@ -1228,23 +1207,24 @@ public class FFluidStatic {
 			// return;
 			// }
 
-			if (canOnlyFullCube(state) && state.hasProperty(BlockStateProperties.WATERLOGGED) && !state.getValue(BlockStateProperties.WATERLOGGED)) {
+			if (canOnlyFullCube(state) && state.hasProperty(WATERLOGGED) && !state.getValue(WATERLOGGED)) {
 				states.clear();
 				states.put(pos.asLong(), getUpdatedState(state, mfl, fluid));
 				complete = true;
 				return;
 			}
 			FluidState fs = state.getFluidState();
-			int el = mfl - fs.getAmount();
-			int osl = sl;
-			sl -= el;
-			int nl = mfl;
-			if (sl <= 0) {
-				nl = mfl + sl;
+			int freeStateLvl = mfl - fs.getAmount();
+			remainingLvl -= freeStateLvl;
+			int newLvl;
+			if (remainingLvl <= 0) {
+				newLvl = mfl + remainingLvl;
 				complete = true;
+			} else {
+				newLvl = mfl;
 			}
-			if (osl != sl)
-				states.put(pos.asLong(), getUpdatedState(state, nl, fluid));
+			if (freeStateLvl != 0) // something has been added
+				states.put(pos.asLong(), getUpdatedState(state, newLvl, fluid));
 		}
 
 		@Override
@@ -1321,31 +1301,36 @@ public class FFluidStatic {
 		World w = (World) e.getWorld();
 		BlockPos pos = e.getPos();
 		BlockState oldState = e.getBlockSnapshot().getReplacedBlock();
-		FluidState fs = oldState.getFluidState();
-		Fluid f = fs.getType();
+		FluidState oldFluidState = oldState.getFluidState();
+		Fluid oldFluid = oldFluidState.getType();
 		BlockState newState = e.getPlacedBlock();
-		Block nb = newState.getBlock();
-		if (fs.isEmpty() || nb instanceof SpongeBlock || nb instanceof WetSpongeBlock) {
+		Block newBlock = newState.getBlock();
+		if (oldFluidState.isEmpty() || newBlock instanceof SpongeBlock || newBlock instanceof WetSpongeBlock) {
 			return;
 		}
 		// frost walker replaces water with water (idk why) => delete water (since it is created again from melting ice)
 		// idk when FrostedIceBlock is placed...
 		int frostWalkerLevel = EnchantmentHelper.getEnchantmentLevel(Enchantments.FROST_WALKER, (LivingEntity) e.getEntity());
-		if (frostWalkerLevel > 0 && nb == Blocks.WATER && newState.getMaterial() == Material.WATER){
+		if (frostWalkerLevel > 0 && newBlock == Blocks.WATER && newState.getMaterial() == Material.WATER){
 			return; // does not create water since frost walker does not trigger on partially filled water blocks
 		}
-		if (nb instanceof ILiquidContainer && !(nb instanceof IWaterLoggable)) {
-			return;
+		if (newBlock instanceof ILiquidContainer && !newState.hasProperty(WATERLOGGED)) {
+			return; // probably only kelp and seagrass (dont exist w/o water) => do not push water
 		}
-		if (nb instanceof IWaterLoggable && newState.getValue(BlockStateProperties.WATERLOGGED)) {
-			return;
-		}
-		if (!canOnlyFullCube(newState) && nb instanceof IBaseWL && f.isSame(Fluids.WATER)) {
-			newState = getUpdatedState(newState, fs.getAmount(), Fluids.WATER);
-			w.setBlockAndUpdate(pos, newState);
-			return;
+		//		return bs.getBlock() instanceof IWaterLoggable;
+		if (newState.hasProperty(WATERLOGGED)){
+			if (newState.hasProperty(FFLUID_LEVEL)){
+				// custom fluid level
+				newState = getUpdatedState(newState, oldFluidState.getAmount(), oldFluid);
+				w.setBlockAndUpdate(pos, newState);
+				return;
+			} else {
+				// vanilla: only waterlogged TODO: does this work as intended?
+				return; // minecraft already sets WATERLOGGED (on place)
+			}
 		}
 
+		// else push water out
 		FluidDisplacer displacer = new FluidDisplacer(w, e);
 		iterateFluidWay(10, e.getPos(), displacer);
 	}

@@ -8,6 +8,7 @@ import net.minecraft.fluid.FlowingFluid;
 import net.minecraft.fluid.Fluid;
 import net.minecraft.fluid.FluidState;
 import net.minecraft.fluid.Fluids;
+import net.minecraft.state.properties.BlockStateProperties;
 import net.minecraft.util.Direction;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.chunk.Chunk;
@@ -82,7 +83,7 @@ public abstract class FFluidBasic extends BasicExecutor {
 		}
 		synchronized (world) {
 			if (fluid != Fluids.EMPTY && !oldState.isAir() && !fluid.isSame(oldState.getFluidState().getType())
-					&& !(oldState.getBlock() instanceof IWaterLoggable)) {
+					&& !(oldState.hasProperty(BlockStateProperties.WATERLOGGED))) {
 				((IFlowingFluid) fluid).beforeReplacingBlockCustom(world, pos, oldState);
 			}
 			// world.markBlockRangeForRenderUpdate(pos, oldState, newState);
@@ -257,10 +258,6 @@ public abstract class FFluidBasic extends BasicExecutor {
 
 	protected boolean canOnlyFillCube(BlockState bs) {
 		return FFluidStatic.canOnlyFullCube(bs);
-	}
-
-	protected boolean canOnlyFillCube(Block b) {
-		return FFluidStatic.canOnlyFullCube(b);
 	}
 
 	protected boolean validate(BlockPos p) {
