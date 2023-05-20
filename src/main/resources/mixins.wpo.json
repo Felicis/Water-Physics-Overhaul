@@ -5,7 +5,11 @@
   "target": "@env(DEFAULT)",  
   "refmap": "mixins.wpo.refmap.json",
   "compatibilityLevel": "JAVA_8",
-  "mixins": [
+  "plugin": "net.skds.wpo.mixins.WPOMixinConfigPlugin",
+  "mixins":
+  [
+    "fluidloggable.IWaterLoggableMixin",
+    "fluidloggable.FluidLoggableBlockMarkerMixin",
 
     "other.BoatEntityMixin",
     "other.FallingBlockEntityMixin",
