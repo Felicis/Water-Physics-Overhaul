@@ -1,5 +1,6 @@
 package net.skds.wpo.fluidphysics;
 
+import com.google.common.collect.ImmutableMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectLinkedOpenHashMap;
 import net.minecraft.block.*;
 import net.minecraft.block.material.Material;
@@ -9,10 +10,8 @@ import net.minecraft.enchantment.Enchantments;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.fluid.*;
-import net.minecraft.item.FishBucketItem;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
+import net.minecraft.item.*;
+import net.minecraft.state.properties.BlockStateProperties;
 import net.minecraft.stats.Stats;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.util.*;
@@ -96,24 +95,30 @@ public class FFluidStatic {
 		if ((newlevel < 0) || (newlevel > WPOConfig.MAX_FLUID_LEVEL)) {
 			throw new RuntimeException("Incorrect fluid level!!!");
 		}
-		if (state0.hasProperty(WATERLOGGED)) {
-			boolean hasWater = newlevel >= 1;
-			if (state0.hasProperty(FFLUID_LEVEL)){
-				return state0.setValue(WATERLOGGED, hasWater).setValue(FFLUID_LEVEL, newlevel);
+		if (state0.isAir() || state0.getBlock() instanceof FlowingFluidBlock){ // WATER, LAVA, Forge_Fluid
+			// if air/fluid => create new fluid in place
+			// TODO: check different fluid? check replace fluid?
+			FluidState fsWithoutBlock;
+			if (newlevel >= WPOConfig.MAX_FLUID_LEVEL) {
+				fsWithoutBlock = ((FlowingFluid) fluid).getSource(false);
+			} else if (newlevel <= 0) {
+				fsWithoutBlock = Fluids.EMPTY.defaultFluidState();
 			} else {
-				return state0.setValue(WATERLOGGED, hasWater); // TODO: this duplicates water
+				fsWithoutBlock = ((FlowingFluid) fluid).getFlowing(newlevel, false);
+			}
+			return fsWithoutBlock.createLegacyBlock();
+		} else { // real block (not air)
+			if (state0.hasProperty(WATERLOGGED)) {
+				boolean hasWater = newlevel >= 1;
+				if (state0.hasProperty(FFLUID_LEVEL)) {
+					return state0.setValue(WATERLOGGED, hasWater).setValue(FFLUID_LEVEL, newlevel);
+				} else {
+					return state0.setValue(WATERLOGGED, hasWater); // TODO: this duplicates water
+				}
+			} else { // not waterloggable
+				return state0; // TODO destroys water?
 			}
 		}
-		// this here destroys non-waterlogged blocks!!!
-		FluidState fsWithoutBlock;
-		if (newlevel >= WPOConfig.MAX_FLUID_LEVEL) {
-			fsWithoutBlock = ((FlowingFluid) fluid).getSource(false);
-		} else if (newlevel <= 0) {
-			fsWithoutBlock = Fluids.EMPTY.defaultFluidState();
-		} else {
-			fsWithoutBlock = ((FlowingFluid) fluid).getFlowing(newlevel, false);
-		}
-		return fsWithoutBlock.createLegacyBlock();
 	}
 
 	public static float getHeight(int level) {
@@ -534,6 +539,30 @@ public class FFluidStatic {
 
 	public static boolean canOnlyFullCube(BlockState bs){
 		return bs.hasProperty(WATERLOGGED) && ! bs.hasProperty(FFLUID_LEVEL);
+	}
+
+	public static BlockState getStateWithFluid(BlockState state, ItemUseContext context) {
+		return getStateWithFluid(state, context.getLevel(), context.getClickedPos());
+	}
+
+	public static BlockState getStateWithFluid(BlockState state, World world, BlockPos pos) {
+		BlockState oldBlockState = world.getBlockState(pos);
+		if (state != null && oldBlockState != null) {
+			return getStateWithFluid(state, oldBlockState);
+		}
+		return state;
+	}
+
+	public static BlockState getStateWithFluid(BlockState blockState, BlockState oldBlockState) {
+		if (oldBlockState.hasProperty(WATERLOGGED) && blockState.hasProperty(WATERLOGGED)) {
+			Fluid oldFluid = oldBlockState.getFluidState().getType();
+			if (oldBlockState.hasProperty(FFLUID_LEVEL) && blockState.hasProperty(FFLUID_LEVEL)){
+				return getUpdatedState(blockState, oldBlockState.getValue(FFLUID_LEVEL), oldFluid);
+			} else {
+				return blockState.setValue(WATERLOGGED, oldBlockState.getValue(WATERLOGGED));
+			}
+		}
+		return blockState;
 	}
 
 	// ================= ITEMS ==================//
