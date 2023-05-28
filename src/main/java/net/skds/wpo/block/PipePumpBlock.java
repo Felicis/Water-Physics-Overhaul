@@ -16,7 +16,7 @@ import net.minecraft.util.math.shapes.VoxelShape;
 import net.minecraft.util.math.shapes.VoxelShapes;
 import net.minecraft.world.IBlockReader;
 import net.minecraft.world.World;
-import net.skds.wpo.tileentity.PipePumpTileEntity;
+import net.skds.wpo.block.tileentity.PipePumpTileEntity;
 
 public class PipePumpBlock extends DirectionalBlock {
 

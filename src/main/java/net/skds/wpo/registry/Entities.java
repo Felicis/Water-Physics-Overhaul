@@ -7,10 +7,10 @@ import net.minecraftforge.fml.RegistryObject;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
-import net.skds.wpo.tileentity.FluidGateTileEntity;
-import net.skds.wpo.tileentity.PipePumpTileEntity;
-import net.skds.wpo.tileentity.PipeTileEntity;
-import net.skds.wpo.tileentity.PumpTileEntity;
+import net.skds.wpo.block.tileentity.FluidGateTileEntity;
+import net.skds.wpo.block.tileentity.PipePumpTileEntity;
+import net.skds.wpo.block.tileentity.PipeTileEntity;
+import net.skds.wpo.block.tileentity.PumpTileEntity;
 
 import static net.skds.wpo.WPO.MOD_ID;
 

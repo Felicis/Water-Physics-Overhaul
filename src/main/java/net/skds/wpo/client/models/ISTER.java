@@ -28,9 +28,9 @@ import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandlerItem;
 import net.skds.wpo.item.AdvancedBucket;
 import net.skds.wpo.registry.FBlocks;
-import net.skds.wpo.tileentity.PipePumpTileEntity;
-import net.skds.wpo.tileentity.PipeTileEntity;
-import net.skds.wpo.tileentity.PumpTileEntity;
+import net.skds.wpo.block.tileentity.PipePumpTileEntity;
+import net.skds.wpo.block.tileentity.PipeTileEntity;
+import net.skds.wpo.block.tileentity.PumpTileEntity;
 
 @OnlyIn(Dist.CLIENT)
 public class ISTER extends ItemStackTileEntityRenderer {

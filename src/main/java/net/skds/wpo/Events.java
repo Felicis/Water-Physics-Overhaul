@@ -12,7 +12,7 @@ import net.skds.core.api.IWWSG;
 import net.skds.core.events.OnWWSAttachEvent;
 import net.skds.core.events.SyncTasksHookEvent;
 import net.skds.core.multithreading.ThreadProvider;
-import net.skds.wpo.fluidphysics.FFluidStatic;
+import net.skds.wpo.fluidphysics.EventStatic;
 import net.skds.wpo.fluidphysics.WorldWorkSet;
 import net.skds.wpo.util.pars.ParsApplier;
 
@@ -20,7 +20,7 @@ public class Events {
 
 	@SubscribeEvent(priority = EventPriority.LOWEST)
 	public void test(PistonEvent.Pre e) {
-		FFluidStatic.onPistonPre(e);
+		EventStatic.onPistonPre(e);
 	}
 
 	// @SubscribeEvent
@@ -30,12 +30,12 @@ public class Events {
 
 	@SubscribeEvent
 	public void onBucketEvent(FillBucketEvent e) {
-		FFluidStatic.onBucketEvent(e);
+		EventStatic.onBucketEvent(e);
 	}
 
 	@SubscribeEvent
 	public void onBlockPlaceEvent(BlockEvent.EntityPlaceEvent e) {
-		FFluidStatic.onBlockPlace(e);
+		EventStatic.onBlockPlace(e);
 	}
 
 	@SubscribeEvent

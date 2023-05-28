@@ -3,6 +3,9 @@ package net.skds.wpo.fluidphysics;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import net.skds.core.api.multithreading.ITaskRunnable;
+import net.skds.wpo.fluidphysics.executors.FFluidBasic;
+import net.skds.wpo.fluidphysics.executors.FFluidDefault;
+import net.skds.wpo.fluidphysics.executors.FFluidEQ;
 import net.skds.wpo.util.TaskBlocker;
 
 public abstract class FluidTask implements ITaskRunnable {

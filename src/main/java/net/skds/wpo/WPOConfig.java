@@ -1,6 +1,5 @@
 package net.skds.wpo;
 
-import java.io.File;
 import java.nio.file.Paths;
 
 import org.apache.commons.lang3.tuple.Pair;
@@ -15,9 +14,6 @@ public class WPOConfig {
     public static final Main COMMON;
     //public static final Waterlogged WATERLOGGED;
     private static final ForgeConfigSpec SPEC;//, SPEC_WL;
-
-
-    public static final int MAX_FLUID_LEVEL = 8;
 
     static {
         Pair<Main, ForgeConfigSpec> cm = new ForgeConfigSpec.Builder().configure(Main::new);

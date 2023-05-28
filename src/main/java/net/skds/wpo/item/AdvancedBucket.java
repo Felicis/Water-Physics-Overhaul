@@ -24,9 +24,9 @@ import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ICapabilityProvider;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.FluidStack;
-import net.skds.wpo.WPOConfig;
 import net.skds.wpo.client.models.ISTER;
 import net.skds.wpo.fluidphysics.FFluidStatic;
+import net.skds.wpo.util.Constants;
 import net.skds.wpo.util.ExtendedFHIS;
 
 public class AdvancedBucket extends BucketItem implements ICapabilityProvider {
@@ -39,7 +39,7 @@ public class AdvancedBucket extends BucketItem implements ICapabilityProvider {
 
 	public static AdvancedBucket getBucketForReg(Fluid fluid) {
 		Properties prop = new Properties().stacksTo(fluid == Fluids.EMPTY ? 16 : 1)
-				.defaultDurability(WPOConfig.MAX_FLUID_LEVEL).setNoRepair().setISTER(() -> ISTER.call());
+				.defaultDurability(Constants.MAX_FLUID_LEVEL).setNoRepair().setISTER(() -> ISTER.call());
 		return new AdvancedBucket(fluid, prop);
 	}
 
@@ -78,8 +78,8 @@ public class AdvancedBucket extends BucketItem implements ICapabilityProvider {
 
 	public static void updateDamage(ItemStack stack) {
 		ExtendedFHIS fst = new ExtendedFHIS(stack, 1000);
-		int sl = fst.getFluid().getAmount() / FFluidStatic.FCONST;
-		stack.setDamageValue(WPOConfig.MAX_FLUID_LEVEL - sl);
+		int sl = fst.getFluid().getAmount() / FFluidStatic.MILLIBUCKETS_PER_LEVEL;
+		stack.setDamageValue(Constants.MAX_FLUID_LEVEL - sl);
 	}
 
 }

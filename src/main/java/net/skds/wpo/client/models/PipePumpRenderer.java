@@ -14,7 +14,7 @@ import net.minecraft.util.math.vector.Vector3f;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.skds.wpo.WPO;
-import net.skds.wpo.tileentity.PipePumpTileEntity;
+import net.skds.wpo.block.tileentity.PipePumpTileEntity;
 
 @OnlyIn(Dist.CLIENT)
 public class PipePumpRenderer extends TileEntityRenderer<PipePumpTileEntity> {

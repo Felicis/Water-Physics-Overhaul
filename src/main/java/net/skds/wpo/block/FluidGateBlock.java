@@ -16,7 +16,7 @@ import net.minecraft.util.math.shapes.VoxelShape;
 import net.minecraft.util.math.shapes.VoxelShapes;
 import net.minecraft.world.IBlockReader;
 import net.minecraft.world.World;
-import net.skds.wpo.tileentity.FluidGateTileEntity;
+import net.skds.wpo.block.tileentity.FluidGateTileEntity;
 
 public class FluidGateBlock extends DirectionalBlock {
 
