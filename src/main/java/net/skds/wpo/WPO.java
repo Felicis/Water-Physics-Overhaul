@@ -1,6 +1,5 @@
 package net.skds.wpo;
 
-import net.skds.wpo.registry.BlockStateProps;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -39,7 +38,7 @@ public class WPO
         FBlocks.register();
         Entities.register();
         PacketHandler.init();
-        BlockStateProps.init();
+//        BlockStateProps.init(); // stop properties exploding
     }
     
 

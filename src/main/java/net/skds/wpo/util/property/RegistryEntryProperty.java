@@ -1,16 +1,15 @@
 package net.skds.wpo.util.property;
 
-import com.sun.istack.internal.NotNull;
 import net.minecraft.state.Property;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.registry.Registry;
 
-import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.Optional;
 
 /**
  * Property to store ResourceLocation in BlockState (e.g. Fluid type)
+ *
  * @param <T>
  */
 public class RegistryEntryProperty<T> extends Property<ResourceLocation> {

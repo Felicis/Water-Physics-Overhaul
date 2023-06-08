@@ -68,6 +68,15 @@ public class FFluidStatic {
 		return dirs;
 	}
 
+	public static FluidState getDefaultFluidState(BlockState blockState) {
+		if (blockState.getBlock() instanceof FlowingFluidBlock) { // if is fluid block...
+			return ((FlowingFluidBlock) blockState.getBlock()).getFluid().defaultFluidState(); // ... get default fluid state for it
+		} else {
+			// TODO: auto-waterlog for worldgen
+			return Fluids.EMPTY.defaultFluidState(); // else return empty
+		}
+	}
+
 	/**
 	 * returns true is block is air (abstraction around forge air block)<br/>
 	 * use to check for empty (water accepting) locations

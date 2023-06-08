@@ -31,9 +31,9 @@ public class PipeUpdatePacket {
 		return new PipeUpdatePacket(buffer);
 	}
 
-	void handle(Supplier<NetworkEvent.Context> context) {		
+	void handle(Supplier<NetworkEvent.Context> context) {
 		Minecraft minecraft = Minecraft.getInstance();
-		ClientWorld w = (ClientWorld) minecraft.player.level;
+		ClientWorld w = minecraft.level;
 		//w.addParticle(ParticleTypes.FLAME, nbt.getX() + 0.5, nbt.getY() + 0.5, nbt.getZ() + 0.5, 0, 0.06, 0);
 		int x = nbt.getInt("x");
 		int y = nbt.getInt("y");

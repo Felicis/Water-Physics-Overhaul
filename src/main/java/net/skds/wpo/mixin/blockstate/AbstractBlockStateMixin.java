@@ -1,5 +1,6 @@
 package net.skds.wpo.mixin.blockstate;
 
+import net.skds.wpo.WPO;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -27,27 +28,28 @@ public abstract class AbstractBlockStateMixin {
 	 */
 	@Inject(method = "getFluidState", at = @At(value = "HEAD"), cancellable = true)
 	public void getFluidStateM(CallbackInfoReturnable<FluidState> cir) {
-		BlockState state = (BlockState) (Object) this;
-		cir.setReturnValue(FFluidStatic.getFluidState(state));
+		WPO.LOGGER.error("AbstractBlockState.getFluidState() was called!!!!"); // TODO exception for debugging?
+		cir.setReturnValue(null);
 	}
 
 	@Inject(method = "isRandomlyTicking", at = @At(value = "HEAD"), cancellable = true)
 	public void isRandomlyTickingM(CallbackInfoReturnable<Boolean> ci) {
 	}
 
-	@Inject(method = "neighborChanged", at = @At(value = "HEAD"))
-	public void neighborChangedM(World world, BlockPos pos, Block block, BlockPos fromPos, boolean isMoving,
-			CallbackInfo ci) {
-		BlockState state = (BlockState) (Object) this;
-		FFluidStatic.tryScheduleFluidTick(world, pos, state);
-	}
+	// TODO schedule fluid ticks when neighbors change/update shape/... (maybe do in FluidStateMixin?)
+//	@Inject(method = "neighborChanged", at = @At(value = "HEAD"))
+//	public void neighborChangedM(World world, BlockPos pos, Block block, BlockPos fromPos, boolean isMoving,
+//								 CallbackInfo ci) {
+//		BlockState state = (BlockState) (Object) this;
+//		FFluidStatic.tryScheduleFluidTick(world, pos, state);
+//	}
 
-	@Inject(method = "updateShape", at = @At(value = "HEAD"))
-	public void updateShapeM(Direction face, BlockState queried, IWorld worldIn, BlockPos currentPos,
-			BlockPos offsetPos, CallbackInfoReturnable<BlockState> ci) {
-		BlockState state = (BlockState) (Object) this;
-		FFluidStatic.tryScheduleFluidTick(worldIn, currentPos, state);
-	}
+//	@Inject(method = "updateShape", at = @At(value = "HEAD"))
+//	public void updateShapeM(Direction face, BlockState queried, IWorld worldIn, BlockPos currentPos,
+//							 BlockPos offsetPos, CallbackInfoReturnable<BlockState> ci) {
+//		BlockState state = (BlockState) (Object) this;
+//		FFluidStatic.tryScheduleFluidTick(worldIn, currentPos, state);
+//	}
 
 	private void fixFFLNoWL(IWorld w, BlockState s, BlockPos p) { // TODO remove if state stays stable; else use in mixins
 		if (!s.getValue(WATERLOGGED) && s.getValue(WPO_LEVEL) > 0) {
