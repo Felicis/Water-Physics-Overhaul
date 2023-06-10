@@ -7,19 +7,12 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.IBlockReader;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(BushBlock.class)
 public class BushBlockMixin {
-    @Inject(method = "propagatesSkylightDown", at = @At(value = "INVOKE", target = "Lnet/minecraft/fluid/FluidState;isEmpty()Z"))
-    public void isEmptyFluidState(BlockState pState, IBlockReader pReader, BlockPos pPos, CallbackInfoReturnable<Boolean> cir) {
-        pReader.getFluidState(pPos).isEmpty(); // correct FluidState access -> isEmpty
-    }
-
-    @Redirect(method = "propagatesSkylightDown", at = @At(value = "INVOKE", target = "Lnet/minecraft/fluid/FluidState;isEmpty()Z"))
-    public boolean isEmptyNOP(FluidState instance) {
-        return true; // NOP
+    @Redirect(method = "propagatesSkylightDown", at = @At(value = "INVOKE", target = "Lnet/minecraft/block/BlockState;getFluidState()Lnet/minecraft/fluid/FluidState;"))
+    private FluidState getFluidState(BlockState instance, BlockState pState, IBlockReader pReader, BlockPos pPos) {
+        return pReader.getFluidState(pPos);
     }
 }

@@ -9,6 +9,7 @@
   "mixins": [
     "block.other.BeehiveBlockMixin",
     "block.other.BlockMixin",
+    "block.other.BushBlockMixin",
     "block.other.ConcretePowderBlockMixin",
     "block.other.SpreadableSnowyDirtBlockMixin",
     "block.withfluidphysics.FlowingFluidBlockMixin",
@@ -60,8 +61,7 @@
     "world.DebugChunkGeneratorMixin",
     "world.EmptyChunkMixin",
     "world.FlatChunkGeneratorMixin",
-    "world.Heightmap$TypeMixin",
-    "world.IBlockReaderMixin",
+    "world.Heightmap_TypeMixin",
     "world.IChunkMixin",
     "world.IWorldMixin",
     "world.IWorldReaderMixin",

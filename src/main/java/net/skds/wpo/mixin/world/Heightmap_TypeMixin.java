@@ -16,7 +16,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import java.util.function.Predicate;
 
 @Mixin(Heightmap.Type.class)
-public abstract class Heightmap$TypeMixin implements IStringSerializable {
+public abstract class Heightmap_TypeMixin implements IStringSerializable {
     @Shadow
     @Final
     private String serializationKey;

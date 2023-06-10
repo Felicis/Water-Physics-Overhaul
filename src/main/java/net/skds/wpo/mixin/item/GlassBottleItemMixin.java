@@ -18,16 +18,17 @@ import net.minecraft.world.World;
 @Mixin(value = { GlassBottleItem.class })
 public class GlassBottleItemMixin {
 
-	// , args = "Lnet/minecraft/util/math/RayTraceContext$FluidMode;"
 	@ModifyArg(method = "Lnet/minecraft/item/GlassBottleItem;use(Lnet/minecraft/world/World;Lnet/minecraft/entity/player/PlayerEntity;Lnet/minecraft/util/Hand;)Lnet/minecraft/util/ActionResult;", at = @At(value = "INVOKE", target = "Lnet/minecraft/item/GlassBottleItem;getPlayerPOVHitResult(Lnet/minecraft/world/World;Lnet/minecraft/entity/player/PlayerEntity;Lnet/minecraft/util/math/RayTraceContext$FluidMode;)Lnet/minecraft/util/math/BlockRayTraceResult;", args = "Lnet/minecraft/util/math/RayTraceContext$FluidMode;"))
 	public FluidMode aaa(FluidMode fm) {
-		return FluidMode.ANY;
+		return FluidMode.ANY; // allow Fluid targeting (RayTraceContext)
 
 	}
 
-	@Inject(method = "Lnet/minecraft/item/GlassBottleItem;use(Lnet/minecraft/world/World;Lnet/minecraft/entity/player/PlayerEntity;Lnet/minecraft/util/Hand;)Lnet/minecraft/util/ActionResult;", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/World;playSound(Lnet/minecraft/entity/player/PlayerEntity;DDDLnet/minecraft/util/SoundEvent;Lnet/minecraft/util/SoundCategory;FF)V"), cancellable = true)
+	@Inject(method = "Lnet/minecraft/item/GlassBottleItem;use(Lnet/minecraft/world/World;Lnet/minecraft/entity/player/PlayerEntity;Lnet/minecraft/util/Hand;)Lnet/minecraft/util/ActionResult;", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/World;playSound(Lnet/minecraft/entity/player/PlayerEntity;DDDLnet/minecraft/util/SoundEvent;Lnet/minecraft/util/SoundCategory;FF)V", ordinal = 1), cancellable = true)
 	public void bbb(World w, PlayerEntity p, Hand hand, CallbackInfoReturnable<ActionResult<ItemStack>> ci) {
-		EventStatic.onBottleUse(w, p, hand, ci, p.getItemInHand(hand));
+		// inject to only change fluid level where water was collected (water bottle created and returned after mixin)
+		// only allows Water pickup!! (else mixin before fluid type check & add other fluid bottles)
+		EventStatic.onBottleUse(w, p, ci, p.getItemInHand(hand));
 	}
 
 	// ================= SHADOW ================ //

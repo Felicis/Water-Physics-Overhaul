@@ -6,6 +6,7 @@ import net.minecraft.world.biome.provider.BiomeProvider;
 import net.minecraft.world.gen.ChunkGenerator;
 import net.minecraft.world.gen.DebugChunkGenerator;
 import net.minecraft.world.gen.settings.DimensionStructuresSettings;
+import net.skds.wpo.mixininterfaces.BlockReaderMixinInterface;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;

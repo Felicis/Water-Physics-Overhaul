@@ -8,7 +8,7 @@ import net.skds.core.api.IWorldExtended;
 
 public class FluidTasksManager {
 
-	public static void addFluidTask(ServerWorld w, BlockPos pos, BlockState state) {		
+	public static void addFluidTask(ServerWorld w, BlockPos pos) {
 		IWWSG wwsg = ((IWorldExtended) w).getWWS();
 		WorldWorkSet wws = (WorldWorkSet) wwsg.getTyped(WorldWorkSet.class);
 

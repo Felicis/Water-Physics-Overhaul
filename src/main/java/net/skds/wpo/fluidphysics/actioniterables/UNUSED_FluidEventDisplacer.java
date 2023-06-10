@@ -7,9 +7,9 @@ import net.minecraftforge.eventbus.api.Event;
 /**
  * just like the FluidDisplacer, only started from an event that has to be finished
  */
-public class FluidEventDisplacer extends FluidDisplacer {
+public class UNUSED_FluidEventDisplacer extends FluidDisplacer {
     BlockEvent.EntityPlaceEvent event;
-    public FluidEventDisplacer(World w, BlockEvent.EntityPlaceEvent e) {
+    public UNUSED_FluidEventDisplacer(World w, BlockEvent.EntityPlaceEvent e) {
         super(w, e.getBlockSnapshot().getReplacedBlock());
         event = e;
     }

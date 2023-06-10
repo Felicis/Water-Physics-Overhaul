@@ -51,7 +51,7 @@ public class EventStatic {
         IFluidHandlerItem bh;
         if (op.isPresent()) {
             bh = op.get();
-        } else {
+        } else { // WPO advanced bucket
             bh = new ExtendedFHIS(bucket, 1000);
             // System.out.println("l;hhhhhhh " + bh);
         }
@@ -89,7 +89,7 @@ public class EventStatic {
                 bs = w.getBlockState(pos);
             }
             if (!w.isClientSide && bs.hasProperty(WATERLOGGED)) {
-                FluidTasksManager.addFluidTask((ServerWorld) w, pos, bs);
+                FluidTasksManager.addFluidTask((ServerWorld) w, pos);
             }
             if (!bucketFluid.isSame(blockFluid) && blockFluid != Fluids.EMPTY) {
                 e.setCanceled(true); // cannot place fluid into a different fluid
@@ -103,8 +103,7 @@ public class EventStatic {
         }
     }
 
-    public static void onBottleUse(World w, PlayerEntity p, Hand hand,
-                                   CallbackInfoReturnable<ActionResult<ItemStack>> ci, ItemStack stack) {
+    public static void onBottleUse(World w, PlayerEntity p, CallbackInfoReturnable<ActionResult<ItemStack>> ci, ItemStack stack) {
         BlockRayTraceResult rt = rayTrace(w, p, RayTraceContext.FluidMode.ANY);
         BlockPos pos = rt.getBlockPos();
 

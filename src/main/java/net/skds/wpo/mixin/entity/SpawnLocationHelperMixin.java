@@ -18,7 +18,7 @@ public class SpawnLocationHelperMixin {
     /*
         Roadblock injection
      */
-    @Inject(method = "getOverworldRespawnPos", at = @At(value = "HEAD"))
+    @Inject(method = "getOverworldRespawnPos", at = @At(value = "HEAD"), cancellable = true)
     private static void getOverworldRespawnPosM(ServerWorld p_241092_0_, int p_241092_1_, int p_241092_2_, boolean p_241092_3_, CallbackInfoReturnable<BlockPos> cir) {
         // copied because loop: 1 change
         BlockPos.Mutable blockpos$mutable = new BlockPos.Mutable(p_241092_1_, 0, p_241092_2_);

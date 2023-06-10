@@ -112,7 +112,7 @@ public class PistonDisplacer implements IFluidActionIteratable {
 
     @Override
     public void finish() {
-        ActionIterableUtils.fillStates(states, world);
+        ActionIterableUtils.multiSetBlockAndUpdate(states, world);
         event.setResult(Event.Result.ALLOW);
         // System.out.println("u");
     }

@@ -3,8 +3,8 @@ package net.skds.wpo.network;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.world.ClientWorld;
 import net.minecraftforge.fml.network.NetworkEvent;
-import net.skds.wpo.mixin.world.ClientWorldMixinInterface;
-import net.skds.wpo.mixin.world.IWorldWriterMixinInterface;
+import net.skds.wpo.mixininterfaces.ClientWorldMixinInterface;
+import net.skds.wpo.mixininterfaces.IWorldWriterMixinInterface;
 
 import java.util.function.Supplier;
 

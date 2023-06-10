@@ -91,11 +91,10 @@ public class FluidDisplacer implements IFluidActionIteratable {
 
     @Override
     public void finish() {
-        ActionIterableUtils.fillStates(states, world);
+        ActionIterableUtils.multiSetBlockAndUpdate(states, world);
     }
 
     @Override
     public void fail() {
-        // event.setCanceled(true);
     }
 }

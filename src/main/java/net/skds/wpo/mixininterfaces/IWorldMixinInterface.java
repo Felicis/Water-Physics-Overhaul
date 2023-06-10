@@ -1,4 +1,4 @@
-package net.skds.wpo.mixin.world;
+package net.skds.wpo.mixininterfaces;
 
 import net.minecraft.fluid.Fluid;
 import net.minecraft.util.math.BlockPos;

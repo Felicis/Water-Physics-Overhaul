@@ -2,12 +2,8 @@ package net.skds.wpo.mixin.fluid;
 
 import com.google.common.collect.ImmutableMap;
 import com.mojang.serialization.MapCodec;
-import net.minecraft.block.AbstractBlock;
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
 import net.minecraft.fluid.Fluid;
 import net.minecraft.fluid.FluidState;
-import net.minecraft.fluid.Fluids;
 import net.minecraft.state.Property;
 import net.minecraft.state.StateHolder;
 import net.minecraft.util.Direction;
@@ -15,14 +11,16 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.IWorld;
 import net.minecraft.world.World;
 import net.minecraftforge.common.extensions.IForgeFluidState;
-import net.skds.wpo.mixin.world.IWorldWriterMixinInterface;
+import net.skds.wpo.mixininterfaces.FluidMixinInterface;
+import net.skds.wpo.mixininterfaces.FluidStateMixinInterface;
+import net.skds.wpo.mixininterfaces.IWorldWriterMixinInterface;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 
 @Mixin(FluidState.class)
 public abstract class FluidStateMixin extends StateHolder<Fluid, FluidState> implements FluidStateMixinInterface, IForgeFluidState {
     // from AbstractBlock
-    protected static final Direction[] UPDATE_SHAPE_ORDER = new Direction[]{Direction.WEST, Direction.EAST, Direction.NORTH, Direction.SOUTH, Direction.DOWN, Direction.UP};
+    private static final Direction[] UPDATE_SHAPE_ORDER = new Direction[]{Direction.WEST, Direction.EAST, Direction.NORTH, Direction.SOUTH, Direction.DOWN, Direction.UP};
 
     @Shadow public abstract Fluid getType();
 
@@ -78,5 +76,10 @@ public abstract class FluidStateMixin extends StateHolder<Fluid, FluidState> imp
     @Override
     public void updateIndirectNeighbourShapes(IWorld pLevel, BlockPos pPos, int pFlags, int pRecursionLeft) {
         ((FluidMixinInterface) this.getType()).updateIndirectNeighbourShapes(this.getFluidState(), pLevel, pPos, pFlags, pRecursionLeft);
+    }
+
+    @Override
+    public boolean skipRendering(FluidState pAdjacentState, Direction pSide) {
+        return pAdjacentState.getType().isSame(this.getType());
     }
 }

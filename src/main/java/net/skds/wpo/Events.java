@@ -19,7 +19,7 @@ import net.skds.wpo.util.pars.ParsApplier;
 public class Events {
 
 	@SubscribeEvent(priority = EventPriority.LOWEST)
-	public void test(PistonEvent.Pre e) {
+	public void onPrePistonEvent(PistonEvent.Pre e) {
 		EventStatic.onPistonPre(e);
 	}
 

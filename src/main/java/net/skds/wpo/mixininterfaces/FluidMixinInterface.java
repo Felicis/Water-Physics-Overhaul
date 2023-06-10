@@ -1,14 +1,12 @@
-package net.skds.wpo.mixin.fluid;
+package net.skds.wpo.mixininterfaces;
 
-import net.minecraft.block.BlockState;
-import net.minecraft.entity.Entity;
 import net.minecraft.fluid.Fluid;
 import net.minecraft.fluid.FluidState;
 import net.minecraft.util.Direction;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.IWorld;
 import net.minecraft.world.World;
-import net.skds.wpo.mixin.world.IWorldWriterMixinInterface;
+import net.skds.wpo.mixininterfaces.IWorldWriterMixinInterface;
 
 import javax.annotation.Nullable;
 

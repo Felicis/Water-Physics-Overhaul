@@ -7,6 +7,7 @@ import org.spongepowered.asm.mixin.Mixin;
 @Mixin(IWaterLoggable.class)
 public interface IWaterLoggableMixin extends WPOFluidloggableMarker { // TODO to override IWaterLoggable methods patch separately
     /************+ MARKER MIXIN: do not remove this mixing even if empty ****************/
+
 }
 //    AbstractCoralPlantBlock.class, // CoralFanBlock(CoralFinBlock,DeadCoralWallFanBlock(CoralWallFanBlock)),CoralPlantBlock, DeadCoralPlantBlock
 //    AbstractSignBlock.class, // Wall, Standing

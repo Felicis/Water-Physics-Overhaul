@@ -8,9 +8,7 @@ import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.world.IBlockReader;
 import net.minecraft.world.IWorld;
 import net.minecraft.world.World;
-import net.minecraft.world.server.ServerWorld;
 import net.skds.wpo.fluidphysics.FFluidStatic;
-import net.skds.wpo.fluidphysics.FluidTasksManager;
 import net.skds.wpo.fluidphysics.RenderStatic;
 import net.skds.wpo.util.interfaces.IFlowingFluid;
 import org.spongepowered.asm.mixin.Mixin;
@@ -23,13 +21,13 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(value = {FlowingFluid.class})
 public class FlowingFluidMixin implements IFlowingFluid {
 
+    /*
+        Roadblock
+     */
     @Inject(method = "tick", at = @At(value = "HEAD"), cancellable = true)
     public void tick(World worldIn, BlockPos pos, FluidState fs, CallbackInfo ci) {
-        if (!worldIn.isClientSide) {
-            FluidTasksManager.addFluidTask((ServerWorld) worldIn, pos, fs.createLegacyBlock());
-        }
-        ci.cancel();
-
+        FFluidStatic.tickFlowingFluid(worldIn, pos, fs); // extract complexity
+        ci.cancel(); // DONT run vanilla fluid tick (fluid spreading, duplication, etc.)
     }
 
     @Inject(method = "getFlow", at = @At(value = "HEAD"), cancellable = true)

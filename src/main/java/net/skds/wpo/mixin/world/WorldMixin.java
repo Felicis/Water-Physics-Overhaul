@@ -15,8 +15,9 @@ import net.minecraft.world.chunk.Chunk;
 import net.minecraft.world.server.ChunkHolder;
 import net.minecraftforge.common.capabilities.CapabilityProvider;
 import net.minecraftforge.common.extensions.IForgeWorld;
-import net.skds.wpo.mixin.fluid.FluidMixinInterface;
-import net.skds.wpo.mixin.fluid.FluidStateMixinInterface;
+import net.skds.wpo.mixininterfaces.FluidMixinInterface;
+import net.skds.wpo.mixininterfaces.FluidStateMixinInterface;
+import net.skds.wpo.mixininterfaces.*;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -24,7 +25,7 @@ import org.spongepowered.asm.mixin.Shadow;
 import javax.annotation.Nullable;
 
 @Mixin(World.class)
-public abstract class WorldMixin extends CapabilityProvider<World> implements WorldMixinInterface, IWorldWriterMixinInterface, IWorld, AutoCloseable, IForgeWorld {
+public abstract class WorldMixin extends CapabilityProvider<World> implements WorldMixinInterface, IWorld, AutoCloseable, IForgeWorld {
     @Shadow
     @Final
     public boolean isClientSide;

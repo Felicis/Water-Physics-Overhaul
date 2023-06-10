@@ -5,6 +5,7 @@ import net.minecraft.fluid.Fluids;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.Blockreader;
 import net.minecraft.world.IBlockReader;
+import net.skds.wpo.mixininterfaces.BlockReaderMixinInterface;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -32,4 +33,6 @@ public abstract class BlockreaderMixin implements BlockReaderMixinInterface, IBl
         int i = pPos.getY();
         cir.setReturnValue(i >= 0 && i < this.fluidColumn.length ? this.fluidColumn[i] : Fluids.EMPTY.defaultFluidState());
     }
+
+    // IBlockReader.getBlockStates() not mixin because only used by Lama to check isAir and bubble column to check for Block type
 }

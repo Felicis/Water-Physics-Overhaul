@@ -6,7 +6,7 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 
 public class ActionIterableUtils {
-    public static void fillStates(Long2ObjectLinkedOpenHashMap<BlockState> states, World world) {
+    public static void multiSetBlockAndUpdate(Long2ObjectLinkedOpenHashMap<BlockState> states, World world) {
         if (!world.isClientSide) {
             states.forEach((lpos, state) -> {
                 world.setBlockAndUpdate(BlockPos.of(lpos), state);

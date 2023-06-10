@@ -27,13 +27,10 @@ public abstract class AbstractBlockStateMixin {
 	 * RoadBlock Injection to catch FluidState creation
 	 */
 	@Inject(method = "getFluidState", at = @At(value = "HEAD"), cancellable = true)
-	public void getFluidStateM(CallbackInfoReturnable<FluidState> cir) {
-		WPO.LOGGER.error("AbstractBlockState.getFluidState() was called!!!!"); // TODO exception for debugging?
-		cir.setReturnValue(null);
-	}
-
-	@Inject(method = "isRandomlyTicking", at = @At(value = "HEAD"), cancellable = true)
-	public void isRandomlyTickingM(CallbackInfoReturnable<Boolean> ci) {
+	public void getFluidStateM(CallbackInfoReturnable<FluidState> cir) throws Exception {
+		throw new Exception("AbstractBlockState.getFluidState() was called!!!!");
+//		WPO.LOGGER.error("AbstractBlockState.getFluidState() was called!!!!"); // TODO exception for debugging?
+//		cir.setReturnValue(null);
 	}
 
 	// TODO schedule fluid ticks when neighbors change/update shape/... (maybe do in FluidStateMixin?)

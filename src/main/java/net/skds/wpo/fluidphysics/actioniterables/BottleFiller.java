@@ -72,7 +72,7 @@ public class BottleFiller implements IFluidActionIteratable {
 
     @Override
     public void finish() {
-        ActionIterableUtils.fillStates(states, world);
+        ActionIterableUtils.multiSetBlockAndUpdate(states, world);
     }
 
     @Override

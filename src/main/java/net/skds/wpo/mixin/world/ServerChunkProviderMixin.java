@@ -5,6 +5,8 @@ import net.minecraft.util.math.ChunkPos;
 import net.minecraft.world.chunk.AbstractChunkProvider;
 import net.minecraft.world.server.ChunkHolder;
 import net.minecraft.world.server.ServerChunkProvider;
+import net.skds.wpo.mixininterfaces.ChunkHolderMixinInterface;
+import net.skds.wpo.mixininterfaces.ServerChunkProviderMixinInterface;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 

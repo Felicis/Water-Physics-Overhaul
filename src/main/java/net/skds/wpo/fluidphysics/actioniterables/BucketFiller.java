@@ -84,7 +84,7 @@ public class BucketFiller implements IFluidActionIteratable {
     public void fail() {
         // System.out.println(sl);
 
-        ActionIterableUtils.fillStates(states, world);
+        ActionIterableUtils.multiSetBlockAndUpdate(states, world);
         event.setResult(Event.Result.ALLOW);
         PlayerEntity p = event.getPlayer();
         Item item = bucket.getContainer().getItem();
@@ -109,7 +109,7 @@ public class BucketFiller implements IFluidActionIteratable {
 
     @Override
     public void finish() {
-        ActionIterableUtils.fillStates(states, world);
+        ActionIterableUtils.multiSetBlockAndUpdate(states, world);
 
         event.setResult(Event.Result.ALLOW);
         PlayerEntity p = event.getPlayer();

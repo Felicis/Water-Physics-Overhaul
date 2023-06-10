@@ -1,50 +1,40 @@
 package net.skds.wpo.mixin.fluid;
 
-import java.util.Random;
-
-import net.skds.wpo.fluidphysics.FFluidStatic;
-import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Overwrite;
-
+import net.minecraft.fluid.FlowingFluid;
 import net.minecraft.fluid.FluidState;
 import net.minecraft.fluid.WaterFluid;
 import net.minecraft.particles.ParticleTypes;
-import net.minecraft.state.properties.BlockStateProperties;
-import net.minecraft.util.SoundCategory;
-import net.minecraft.util.SoundEvents;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.skds.wpo.fluidphysics.FFluidStatic;
+import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-@Mixin(value = { WaterFluid.class })
+import java.util.Random;
+
+@Mixin(value = {WaterFluid.class})
 public class WaterFluidMixin {
 
-	@Inject(method = "getTickDelay", at = @At(value = "TAIL"), cancellable = true)
-	public void getTickDelayM(CallbackInfoReturnable<Integer> ci) {
-		Integer oldTickDelay = ci.getReturnValue();
-		int newTickDelay = FFluidStatic.getTickDelay(oldTickDelay);
-		ci.setReturnValue(newTickDelay);
-	}
+    @Inject(method = "getTickDelay", at = @At(value = "TAIL"), cancellable = true)
+    public void getTickDelayM(CallbackInfoReturnable<Integer> ci) {
+        Integer oldTickDelay = ci.getReturnValue();
+        int newTickDelay = FFluidStatic.getTickDelay(oldTickDelay);
+        ci.setReturnValue(newTickDelay);
+    }
 
-	@OnlyIn(Dist.CLIENT)
-	@Overwrite
-	public void animateTick(World worldIn, BlockPos pos, FluidState state, Random random) {
-		if (!state.isSource() && !state.getValue(BlockStateProperties.FALLING)) {
-
-			if (random.nextInt(16) == 0 && state.getFlow(worldIn, pos).lengthSqr() > 0.5D) {
-				worldIn.playLocalSound((double) pos.getX() + 0.5D, (double) pos.getY() + 0.5D, (double) pos.getZ() + 0.5D,
-						SoundEvents.WATER_AMBIENT, SoundCategory.BLOCKS, random.nextFloat() * 0.25F + 0.75F,
-						random.nextFloat() + 0.5F, false);
-			}
-
-		} else if (random.nextInt(10) == 0 && state.isSource()) {
-			worldIn.addParticle(ParticleTypes.UNDERWATER, (double) pos.getX() + random.nextDouble(),
-					(double) pos.getY() + random.nextDouble(), (double) pos.getZ() + random.nextDouble(), 0.0D, 0.0D,
-					0.0D);
-		}
-	}
+    /*
+        Roadblock
+     */
+    @Inject(method = "animateTick", at = @At(value = "HEAD"))
+    private void animateTickM(World pLevel, BlockPos pPos, FluidState pState, Random pRandom, CallbackInfo ci) {
+        // copied from Waterfluid.animateTick with changes
+        // CHANGE remove first if for flowing water
+        if (!pState.getValue(FlowingFluid.FALLING) && pRandom.nextInt(10) == 0) { // source or flowing (not falling)
+            double yPosParticle = (double) pPos.getY() + pRandom.nextDouble() * pState.getOwnHeight(); // CHANGE: no underwater particles above surface
+            pLevel.addParticle(ParticleTypes.UNDERWATER, (double) pPos.getX() + pRandom.nextDouble(), yPosParticle, (double) pPos.getZ() + pRandom.nextDouble(), 0.0D, 0.0D, 0.0D);
+        }
+    }
 }

@@ -6,6 +6,7 @@ import net.minecraft.util.math.ChunkPos;
 import net.minecraft.util.palette.UpgradeData;
 import net.minecraft.world.chunk.ChunkPrimer;
 import net.minecraft.world.chunk.ChunkPrimerWrapper;
+import net.skds.wpo.mixininterfaces.IChunkMixinInterface;
 import org.spongepowered.asm.mixin.Mixin;
 
 import javax.annotation.Nullable;

@@ -9,6 +9,8 @@ import net.minecraft.world.gen.ChunkGenerator;
 import net.minecraft.world.gen.NoiseChunkGenerator;
 import net.minecraft.world.gen.settings.DimensionStructuresSettings;
 import net.skds.wpo.fluidphysics.FFluidStatic;
+import net.skds.wpo.mixininterfaces.BlockReaderMixinInterface;
+import net.skds.wpo.mixininterfaces.ChunkSectionMixinInterface;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;

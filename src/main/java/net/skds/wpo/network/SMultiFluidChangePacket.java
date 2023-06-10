@@ -10,7 +10,7 @@ import net.minecraft.world.chunk.ChunkSection;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.fml.network.NetworkEvent;
-import net.skds.wpo.mixin.fluid.FluidMixinInterface;
+import net.skds.wpo.mixininterfaces.FluidMixinInterface;
 
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;

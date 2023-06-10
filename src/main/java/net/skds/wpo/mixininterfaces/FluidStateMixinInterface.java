@@ -1,4 +1,4 @@
-package net.skds.wpo.mixin.fluid;
+package net.skds.wpo.mixininterfaces;
 
 import net.minecraft.block.BlockState;
 import net.minecraft.fluid.Fluid;
@@ -21,4 +21,6 @@ public interface FluidStateMixinInterface {
     void updateIndirectNeighbourShapes(IWorld pLevel, BlockPos pPos, int pFlag, int pRecursionLeft);
 
     FluidState updateShape(Direction pDirection, FluidState pQueried, IWorld pLevel, BlockPos pCurrentPos, BlockPos pOffsetPos);
+
+    boolean skipRendering(FluidState pAdjacentState, Direction pSide);
 }

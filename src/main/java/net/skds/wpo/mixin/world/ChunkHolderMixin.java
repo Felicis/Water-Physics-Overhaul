@@ -9,6 +9,7 @@ import net.minecraft.world.World;
 import net.minecraft.world.chunk.Chunk;
 import net.minecraft.world.chunk.ChunkSection;
 import net.minecraft.world.server.ChunkHolder;
+import net.skds.wpo.mixininterfaces.ChunkHolderMixinInterface;
 import net.skds.wpo.network.PacketHandler;
 import net.skds.wpo.network.SChangeFluidPacket;
 import net.skds.wpo.network.SMultiFluidChangePacket;

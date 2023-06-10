@@ -1,4 +1,4 @@
-package net.skds.wpo.mixin.world;
+package net.skds.wpo.mixininterfaces;
 
 import net.minecraft.block.BlockState;
 import net.minecraft.fluid.Fluid;
@@ -9,7 +9,7 @@ import net.minecraft.world.chunk.Chunk;
 
 import javax.annotation.Nullable;
 
-public interface WorldMixinInterface {
+public interface WorldMixinInterface extends IWorldWriterMixinInterface {
     /**
      * sends fluid state update to clients
      *

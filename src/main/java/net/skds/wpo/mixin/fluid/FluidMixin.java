@@ -1,7 +1,5 @@
 package net.skds.wpo.mixin.fluid;
 
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
 import net.minecraft.fluid.Fluid;
 import net.minecraft.fluid.FluidState;
 import net.minecraft.network.DebugPacketSender;
@@ -13,12 +11,15 @@ import net.minecraft.world.IWorld;
 import net.minecraft.world.World;
 import net.minecraftforge.common.extensions.IForgeFluid;
 import net.minecraftforge.registries.ForgeRegistryEntry;
+import net.skds.wpo.mixininterfaces.FluidMixinInterface;
+import net.skds.wpo.util.marker.WPOFluidMarker;
 import org.spongepowered.asm.mixin.Mixin;
 
 import javax.annotation.Nullable;
 
 @Mixin(Fluid.class)
-public abstract class FluidMixin extends ForgeRegistryEntry<Fluid> implements FluidMixinInterface, IForgeFluid {
+public abstract class FluidMixin extends ForgeRegistryEntry<Fluid> implements WPOFluidMarker, FluidMixinInterface, IForgeFluid {
+    /**************+ MARKER MIXIN: do not remove this mixing even if empty ****************/
 
     @Nullable
     private String descriptionId; // copied from Block
@@ -31,6 +32,7 @@ public abstract class FluidMixin extends ForgeRegistryEntry<Fluid> implements Fl
     @Override
     public void onRemove(FluidState pState, World pLevel, BlockPos pPos, FluidState pNewState, boolean pIsMoving) {
         // do nothing? (Block was removing block entity)
+        // update BlockSTate.waterlogged?
     }
 
     @Override

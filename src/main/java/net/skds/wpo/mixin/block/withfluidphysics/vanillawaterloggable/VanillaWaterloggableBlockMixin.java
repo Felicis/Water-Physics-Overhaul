@@ -31,11 +31,11 @@ public class VanillaWaterloggableBlockMixin implements IWaterLoggable, WPOFluidl
     /************+ MARKER MIXIN: do not remove this mixing even if empty ****************/
 
 
-    /**
-     * RoadBlock Injection to catch FluidState creation
-     */
-    @Inject(method = "getFluidState", at = @At(value = "HEAD"), cancellable = true)
-    public void getFluidStateM(BlockState state, CallbackInfoReturnable<FluidState> cir) {
-        cir.setReturnValue(FFluidStatic.getFluidState(state)); // TODO: (optional since only called by AbstractBlockState.~) -> use world.getFluidState(Pos)
-    }
+//    /**
+//     * RoadBlock Injection to catch FluidState creation
+//     */
+//    @Inject(method = "getFluidState", at = @At(value = "HEAD"), cancellable = true)
+//    public void getFluidStateM(BlockState state, CallbackInfoReturnable<FluidState> cir) {
+//        cir.setReturnValue(FFluidStatic.getFluidState(state)); // TODO: (optional since only called by AbstractBlockState.~) -> use world.getFluidState(Pos)
+//    }
 }

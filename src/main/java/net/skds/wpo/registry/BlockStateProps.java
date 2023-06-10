@@ -1,6 +1,5 @@
 package net.skds.wpo.registry;
 
-import com.google.common.collect.ImmutableSet;
 import net.minecraft.block.*;
 import net.minecraft.fluid.FlowingFluid;
 import net.minecraft.fluid.Fluid;
@@ -10,10 +9,8 @@ import net.minecraft.state.IntegerProperty;
 import net.minecraft.util.Direction;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.registry.Registry;
-import net.skds.wpo.fluidphysics.FFluidStatic;
 import net.skds.wpo.util.Constants;
 import net.skds.wpo.util.marker.WPOFluidMarker;
-import net.skds.wpo.util.marker.WPOFluidloggableMarker;
 import net.skds.wpo.util.property.RegistryEntryProperty;
 import virtuoel.statement.api.StateRefresher;
 import virtuoel.statement.util.RegistryUtils;
@@ -27,16 +24,21 @@ public class BlockStateProps {
 	public static final EnumProperty<Direction> ROTATION = EnumProperty.create("frotation", Direction.class);
 
 	public static void init() {
-		for (Block block : Registry.BLOCK) { // TODO too slow: Properties are ballooning => LEVEL x WPO_LEVEL x WPO_FLUID?
-			// use markers to check which blocks should get properties & add properties
-			// DO NOT TRY to add properties in XXXBlock constructor => it is called before this ;) => add default values here
-			if (WPOFluidloggableMarker.isWPOFluidloggable(block)){
-				addWPOFluidloggableProps(block);
-			}
-			if (WPOFluidMarker.isWPOFluid(block)){
-				addWPOFluidProps(block);
-			}
-		}
+//		for (Block block : Registry.BLOCK) { // TODO too slow: Properties are ballooning => LEVEL x WPO_LEVEL x WPO_FLUID?
+//			// use markers to check which blocks should get properties & add properties
+//			// DO NOT TRY to add properties in XXXBlock constructor => it is called before this ;) => add default values here
+//			if (WPOFluidloggableMarker.isWPOFluidloggable(block)){
+//				addWPOFluidloggableProps(block);
+//			}
+//			if (WPOFluidMarker.isWPOFluid(block)){
+//				addWPOFluidBlockProps(block);
+//			}
+//		}
+//		for (Fluid fluid : Registry.FLUID) {
+//			if (WPOFluidMarker.isWPOFluid(fluid)) {
+//				addWPOFluidProps(fluid);
+//			}
+//		}
 //		// add all fluids (as options) to WPO_FLUID property
 //		StateRefresher.INSTANCE.refreshBlockStates(
 //				WPO_FLUID,
@@ -62,7 +64,7 @@ public class BlockStateProps {
 		}
 	}
 
-	private static void addWPOFluidProps(Block block){
+	private static void addWPOFluidBlockProps(Block block){
 		// add WPO_FLUID and WPO_LEVEL to fluid blocks that should get leveled water physics
 		// WPO_FLUID: use correct fluid
 		// WPO_LEVEL: use max level (defaultstate of fluid block is full block)
@@ -72,6 +74,14 @@ public class BlockStateProps {
 		}
 		if (!block.defaultBlockState().hasProperty(WPO_FLUID)) {
 			StateRefresher.INSTANCE.addBlockProperty(block, WPO_FLUID, fluid.getRegistryName()); // TODO crashes for minecraft:lava?
+		}
+	}
+
+	private static void addWPOFluidProps(Fluid fluid){
+		// add WPO_LEVEL to fluids (fluid states) that should get leveled water physics
+		// WPO_LEVEL: default use max level (TODO?)
+		if (!fluid.defaultFluidState().hasProperty(WPO_LEVEL)) {
+			StateRefresher.INSTANCE.addFluidProperty(fluid, WPO_LEVEL, Constants.MAX_FLUID_LEVEL);
 		}
 	}
 
