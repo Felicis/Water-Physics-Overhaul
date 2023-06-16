@@ -52,4 +52,10 @@ public class FlowingFluidMixin implements IFlowingFluid {
     @Shadow
     protected void beforeDestroyingBlock(IWorld worldIn, BlockPos pos, BlockState state) {
     }
+
+//    private void spread(IWorld pLevel, BlockPos pPos, FluidState pState) {}
+//    private void canSpreadTo(IWorld pLevel, BlockPos pFromPos, BlockState pFromState,
+//                             Direction direction, BlockPos pToPos, BlockState pToState, FluidState pToFState, Fluid pFromFluid) {}
+//    // canHoldFluid: contains check for material.blocksMotion(), which breaks e.g. redstone (DECORATION), vines (REPLACEABLE_PLANT), ...
+//    private void canHoldFluid(IBlockReader pLevel, BlockPos pPos, BlockState pState, Fluid pNewFluid) {}
 }

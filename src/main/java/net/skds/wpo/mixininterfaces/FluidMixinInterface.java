@@ -11,9 +11,9 @@ import net.skds.wpo.mixininterfaces.IWorldWriterMixinInterface;
 import javax.annotation.Nullable;
 
 public interface FluidMixinInterface {
-    void onPlace(FluidState pState, World pLevel, BlockPos pPos, FluidState pOldState, boolean pIsMoving);
+    void onPlace(FluidState pNewState, World pLevel, BlockPos pPos, FluidState pOldState, boolean pIsMoving);
 
-    void onRemove(FluidState pState, World pLevel, BlockPos pPos, FluidState pNewState, boolean pIsMoving);
+    void onRemove(FluidState pOldState, World pLevel, BlockPos pPos, FluidState pNewState, boolean pIsMoving);
 
     static int getId(@Nullable FluidState pState) {
         if (pState == null) {

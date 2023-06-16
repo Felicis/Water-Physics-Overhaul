@@ -10,6 +10,10 @@ import net.minecraft.world.chunk.Chunk;
 import javax.annotation.Nullable;
 
 public interface WorldMixinInterface extends IWorldWriterMixinInterface {
+    boolean setBlockNoFluid(BlockPos pPos, BlockState pNewState);
+
+    boolean setBlockNoFluid(BlockPos pPos, BlockState pNewState, int pFlags);
+
     /**
      * sends fluid state update to clients
      *

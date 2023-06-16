@@ -14,9 +14,9 @@ public class UNUSED_FluidEventDisplacer extends FluidDisplacer {
         event = e;
     }
 
-    @Override
-    public void finish() {
-        super.finish();
+    public Void finishSuccess(int flags, int recursion) {
+        super.finishSuccess(flags, recursion);
         event.setResult(Event.Result.ALLOW);
+        return null;
     }
 }

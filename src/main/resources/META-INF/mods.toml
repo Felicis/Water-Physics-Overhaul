@@ -57,10 +57,3 @@ Is it really needed?
     versionRange="[1.16.5,1.17)"
     ordering="NONE"
     side="BOTH"
-
-[[dependencies.wpo]]
-    modId="skds_core"
-    mandatory=true
-    versionRange="[forge-1.16.5-0.0.1,forge-1.16.5-0.2.0)"
-    ordering="NONE"
-    side="BOTH"

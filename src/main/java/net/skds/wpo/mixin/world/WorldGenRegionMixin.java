@@ -41,16 +41,20 @@ public abstract class WorldGenRegionMixin implements IWorldWriterMixinInterface,
         return this.setFluid(pPos, Fluids.EMPTY.defaultFluidState(), 3);
     }
 
+    // destroyFluid pointless, because fluid can not drop/be destroyed intuitively
+
     @Redirect(method = "removeBlock", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/gen/WorldGenRegion;setBlock(Lnet/minecraft/util/math/BlockPos;Lnet/minecraft/block/BlockState;I)Z"))
     private boolean setBlockConsideringFluidState(WorldGenRegion instance, BlockPos pPos, BlockState airBlockState, int i3) {
+        // TODO method unused?!?!?
         // replace with contained fluid block (like in World.java)
         // feels safer, since we want to add automatic fluidstates to underwater plants in worldgen and fluid should be removed separately
         return this.setBlock(pPos, this.getFluidState(pPos).createLegacyBlock(), 3);
     }
 
     @Redirect(method = "destroyBlock", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/gen/WorldGenRegion;setBlock(Lnet/minecraft/util/math/BlockPos;Lnet/minecraft/block/BlockState;II)Z"))
-    private boolean setBlockConsideringFluidState2(WorldGenRegion instance, BlockPos pPos, BlockState airBlockState, int i3, int pRecursionLeft) {
-        // replace with contained fluid block (like in World.java)
+    private boolean setBlock_AlsoEmptyFluid(WorldGenRegion instance, BlockPos pPos, BlockState airBlockState, int i3, int pRecursionLeft) {
+        // TODO method unused?!?!?
+        // remove fluid (unlike in World.java)
         // feels safer, since we want to add automatic fluidstates to underwater plants in worldgen and fluid should be removed separately
         return this.setBlock(pPos, this.getFluidState(pPos).createLegacyBlock(), 3, pRecursionLeft);
     }

@@ -11,6 +11,7 @@ import net.minecraft.world.IWorld;
 import net.minecraft.world.World;
 import net.minecraftforge.common.extensions.IForgeFluid;
 import net.minecraftforge.registries.ForgeRegistryEntry;
+import net.skds.wpo.fluidphysics.FFluidStatic;
 import net.skds.wpo.mixininterfaces.FluidMixinInterface;
 import net.skds.wpo.util.marker.WPOFluidMarker;
 import org.spongepowered.asm.mixin.Mixin;
@@ -24,20 +25,38 @@ public abstract class FluidMixin extends ForgeRegistryEntry<Fluid> implements WP
     @Nullable
     private String descriptionId; // copied from Block
 
+    /**
+     * called (on server) in Chunk.setFluidState after set if newState != oldState
+     * @param pNewState
+     * @param pLevel
+     * @param pPos
+     * @param pOldState
+     * @param pIsMoving
+     */
     @Override
-    public void onPlace(FluidState pState, World pLevel, BlockPos pPos, FluidState pOldState, boolean pIsMoving) {
-        // TODO schedule fluid ticks?
+    public void onPlace(FluidState pNewState, World pLevel, BlockPos pPos, FluidState pOldState, boolean pIsMoving) {
+        // schedule fluid ticks after updating (this is called after successful setFluid, where FluidState actually changed)
+        FFluidStatic.scheduleFluidTick(pLevel, pPos, pNewState);
     }
 
+    /**
+     * called (on server) in Chunk.setFluidState if newState != oldState and newState was actually placed
+     * @param pOldState
+     * @param pLevel
+     * @param pPos
+     * @param pNewState
+     * @param pIsMoving
+     */
     @Override
-    public void onRemove(FluidState pState, World pLevel, BlockPos pPos, FluidState pNewState, boolean pIsMoving) {
-        // do nothing? (Block was removing block entity)
+    public void onRemove(FluidState pOldState, World pLevel, BlockPos pPos, FluidState pNewState, boolean pIsMoving) {
+        // TODO do nothing? (Block removes block entity)
         // update BlockSTate.waterlogged?
     }
 
     @Override
     public void neighborChanged(FluidState pState, World pLevel, BlockPos pPos, Fluid pFluid, BlockPos pFromPos, boolean pIsMoving) {
         // copied from AbstractBlock.neighborChanged()
+        // TODO do something?
         DebugPacketSender.sendNeighborsUpdatePacket(pLevel, pPos); // TODO Override in Fluids
     }
 
@@ -54,15 +73,16 @@ public abstract class FluidMixin extends ForgeRegistryEntry<Fluid> implements WP
         return this.descriptionId;
     }
 
+    /**
+     * Update the provided state given the provided neighbor facing and neighbor state, returning a new state.
+     * For example, fences make their connections to the passed in state if possible, and wet concrete powder immediately
+     * returns its solidified counterpart.
+     * Note that this method should ideally consider only the specific face passed in.
+     */
     @Override
     public FluidState updateShape(FluidState pState, Direction pFacing, FluidState pFacingState, IWorld pLevel, BlockPos pCurrentPos, BlockPos pFacingPos) {
         // TODO: tick fluids here (override in
         //  also: remove fluid ticking (and WATERLOGGED check) from AbstractBlockState.updateShape() ???
         return pState;
-    }
-
-    @Override
-    public void updateIndirectNeighbourShapes(FluidState pState, IWorld pLevel, BlockPos pPos, int pFlags, int pRecursionLeft) {
-        // OVERRIDE (for Block only overridden in RedstoneWireBlock)
     }
 }

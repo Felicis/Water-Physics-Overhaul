@@ -59,6 +59,7 @@ public abstract class FluidStateMixin extends StateHolder<Fluid, FluidState> imp
             FluidState neighborFluidStateUpdated = ((FluidStateMixinInterface)(Object) neighborFluidState).updateShape(
                     direction.getOpposite(), this.getFluidState(), pLevel, blockpos$mutable, pPos);
             ((IWorldWriterMixinInterface) pLevel).setFluid(blockpos$mutable, neighborFluidStateUpdated, pFlag, pRecursionLeft);
+            // TODO setFluid or setBlockAndFluid?
         }
     }
 

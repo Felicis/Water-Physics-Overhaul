@@ -2,7 +2,6 @@ package net.skds.wpo.fluidphysics;
 
 import net.minecraft.block.*;
 import net.minecraft.fluid.*;
-import net.minecraft.item.*;
 import net.minecraft.state.properties.SlabType;
 import net.minecraft.util.*;
 import net.minecraft.util.math.*;
@@ -11,19 +10,19 @@ import net.minecraft.util.math.shapes.VoxelShapes;
 import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.util.math.vector.Vector3i;
 import net.minecraft.world.IBlockReader;
-import net.minecraft.world.IWorld;
 import net.minecraft.world.World;
 import net.minecraft.world.server.ServerWorld;
 import net.skds.core.api.IBlockExtended;
-import net.skds.core.api.IWWSG;
-import net.skds.core.api.IWorldExtended;
 import net.skds.wpo.WPO;
 import net.skds.wpo.WPOConfig;
 import net.skds.wpo.fluidphysics.actioniterables.*;
+import net.skds.wpo.mixininterfaces.WorldMixinInterface;
 import net.skds.wpo.util.Constants;
+import net.skds.wpo.util.tuples.Tuple2;
 import net.skds.wpo.util.marker.WPOFluidMarker;
 import net.skds.wpo.util.marker.WPOFluidloggableMarker;
 import net.skds.wpo.util.pars.FluidPars;
+import net.skds.wpo.util.tuples.Tuple3;
 
 import java.util.*;
 
@@ -77,6 +76,12 @@ public class FFluidStatic {
 		}
 	}
 
+	public static boolean isEmpty(Fluid fluid){
+		// DO NOT CALL state.getFluidState() => recursion
+		// replaces: protected Fluid.isEmpty()
+		return fluid.isSame(Fluids.EMPTY);
+	}
+
 	/**
 	 * returns true is block is air (abstraction around forge air block)<br/>
 	 * use to check for empty (water accepting) locations
@@ -89,16 +94,6 @@ public class FFluidStatic {
 		return state.isAir(null, null);
 	}
 
-	public static boolean isEmpty(Fluid fluid){
-		// DO NOT CALL state.getFluidState() => recursion
-		// replaces: protected Fluid.isEmpty()
-		return fluid.isSame(Fluids.EMPTY);
-	}
-
-	public static boolean isFluidOrFluidloggable(BlockState state){
-		return isFluidBlock(state) || isFluidloggableBlock(state);
-	}
-
 	/**
 	 * returns true if state is a FluidBlock and is modded by WPO to have custom leveling<br/>
 	 * use to check for pure fluid blocks (to be handled by WPO)
@@ -106,8 +101,7 @@ public class FFluidStatic {
 	 * @return
 	 */
 	public static boolean isFluidBlock(BlockState state){
-		Block block = state.getBlock();
-		return WPOFluidMarker.isWPOFluid(block);
+		return WPOFluidMarker.isWPOFluid(state.getBlock());
 	}
 
 	/**
@@ -121,23 +115,23 @@ public class FFluidStatic {
 	}
 
 	/**
-	 * checks whether block can contain fluid (with exceptions)
+	 * checks whether block could contain fluid (with exceptions), but not whether there is space for new fluid
 	 * <br/>
 	 * This is the case when:<br/>
+	 * a) the block is air (can be replaced with fluid)<br/>
 	 * a) the block is a (pure) fluid block<br/>
-	 * b) the block is a "normal" block extended by WPO to be waterlogged with arbitrary fluids and levels<br/><br/>
-	 * Air blocks can not directly contain fluid, but they can be replaced with Fluid blocks.<br/>
-	 * Also this does not guarantee that there is enough space left in the pos, but it can always be ejected :)
+	 * b) the block is a "normal" block extended by WPO to be fluidlogged<br/><br/>
+	 * This does not guarantee that there is enough space left in the pos, but it can always be ejected :)
 	 * @param state
 	 * @return
 	 */
 	public static boolean canHoldFluid(BlockState state){ // TODO fix (maybe check FlowingFluid.canHoldFluid)
-//		if (isAirBlock(state)) // a) block is air (does not have WATERLOGGED or LEVEL, but can receive)
-//			return false; // has to be replaced with Fluid or Fluidloggable block first
-		if (isFluidBlock(state)){ // b) WPO fluid block
+		if (isAirBlock(state)) // can be replaced with fluid block
 			return true;
-		} else if (isFluidloggableBlock(state)){ // c) WPO waterlogged block
-			// accumulate exceptions here:
+		if (isFluidBlock(state)){
+			return true;
+		} else if (isFluidloggableBlock(state)){ // WPO fluidloggable (not only WATERLOGGED, but also)
+			// exceptions of fluidloggable blocks that should not hold fluid:
 			if (state.getBlock() instanceof SlabBlock && state.getValue(SlabBlock.TYPE) == SlabType.DOUBLE) {
 				return false; // double slabs cannot hold fluid
 			}
@@ -171,8 +165,8 @@ public class FFluidStatic {
 	 * @param state
 	 * @return
 	 */
-	public static int getFluidLevel(BlockState state){ // TODO REMOVE: use FluidState.getAmount() or Fluid.getAmount(FluidSTatE)
-		return state.getValue(WPO_LEVEL);
+	public static int getFluidBlockLevel(BlockState state){
+		return state.getValue();
 	}
 
 	/**
@@ -189,24 +183,24 @@ public class FFluidStatic {
 		}
 	}
 
-	/**
-	 * getter for WPO_FLUID property (only access through this!)
-	 * @param state
-	 * @return
-	 */
-	public static Fluid getFluid(BlockState state){ // TODO remove or add level, pos & get FluidState
-		return property2Fluid(state.getValue(WPO_FLUID));
-	}
+//	/**
+//	 * getter for WPO_FLUID property (only access through this!)
+//	 * @param state
+//	 * @return
+//	 */
+//	public static Fluid getFluid(BlockState state){ // TODO remove or add level, pos & get FluidState
+//		return property2Fluid(state.getValue(WPO_FLUID));
+//	}
 
-	/**
-	 * setter for WPO_FLUID (only access through this!)
-	 * @param state
-	 * @param fluid
-	 * @return
-	 */
-	public static BlockState setFluid(BlockState state, Fluid fluid){ // TODO remove or add level, pos & set FluidState
-		return state.setValue(WPO_FLUID, fluid2Property(fluid));
-	}
+//	/**
+//	 * setter for WPO_FLUID (only access through this!)
+//	 * @param state
+//	 * @param fluid
+//	 * @return
+//	 */
+//	public static BlockState setFluid(BlockState state, Fluid fluid){ // TODO remove or add level, pos & set FluidState
+//		return state.setValue(WPO_FLUID, fluid2Property(fluid));
+//	}
 
 	/**
 	 *
@@ -240,24 +234,119 @@ public class FFluidStatic {
 		}
 	}
 
-	public static void tryScheduleFluidTick(IWorld world, BlockPos pos, BlockState state) { // TODO: why not use FluidState argument?
-		if (containsFluid(state)) { // only schedule tick if contains fluid
-			FlowingFluid flowingFluid = (FlowingFluid) getFluid(state);
-			int tickRate = flowingFluid.getTickDelay(world);
-			world.getLiquidTicks().scheduleTick(pos, flowingFluid, tickRate);
+	private static FluidState getSourceOrFlowingOrEmpty(FlowingFluid fluid, int fluidLevel){
+		if (fluidLevel == 8){ // source
+			return fluid.getSource(false);
+		} if (fluidLevel == 0){ // empty
+			return Fluids.EMPTY.defaultFluidState();
+		} else { // flowing
+			return fluid.getFlowing(fluidLevel, false);
 		}
 	}
 
-	public static void tickFlowingFluid(World world, BlockPos pos, FluidState fluidState) {
-		if (!fluidState.isEmpty()) { // if empty, skip ticking
-			// TODO lava-water interaction: check LavaFluid.spreadTo() -- config: #lava packets == 1 stone (maybe consume 1 or #lava water packets?)
-			// TODO make water sounds when packets move (ClientWorld.setFluid/setBlock)
-//			if (pRandom.nextInt(64) == 0) {
-//				pLevel.playLocalSound((double)pPos.getX() + 0.5D, (double)pPos.getY() + 0.5D, (double)pPos.getZ() + 0.5D, SoundEvents.WATER_AMBIENT, SoundCategory.BLOCKS, pRandom.nextFloat() * 0.25F + 0.75F, pRandom.nextFloat() + 0.5F, false);
-//			}
-			if (!world.isClientSide) { // only on server new fluid task
-				FluidTasksManager.addFluidTask((ServerWorld) world, pos);
-			}
+	/**
+	 * extracts up to maxLevelsToTake levels from given fluidState. returns how many levels taken and fluidState with levels removed
+	 * @param fluidState
+	 * @param maxLevelsToTake
+	 * @return
+	 */
+	public static Tuple2<Integer, FluidState> takeLevelsUpTo(FluidState fluidState, int maxLevelsToTake) {
+		int actuallyTaken = Math.min(maxLevelsToTake, fluidState.getAmount());
+		int newFSLevel = fluidState.getAmount() - actuallyTaken;
+		FluidState modifiedFluidState = getSourceOrFlowingOrEmpty((FlowingFluid) fluidState.getType(), newFSLevel);
+		return new Tuple2<>(actuallyTaken, modifiedFluidState);
+	}
+
+	/**
+	 * places up to maxLevelsToPlace levels into given fluidState
+	 * @param fluidState
+	 * @param maxLevelsToPlace
+	 * @return 1st: whether levels were placed, 2nd: the # of placed levels, 3rd: the modified FS with levels placed
+	 */
+	public static Tuple3<Boolean, Integer, FluidState> placeLevelsUpTo(FluidState fluidState, int maxLevelsToPlace) {
+		int freeSpaceInFluidState = Constants.MAX_FLUID_LEVEL - fluidState.getAmount();
+		int actuallyPlaced = Math.min(maxLevelsToPlace, freeSpaceInFluidState);
+		int newFSLevel = fluidState.getAmount() + actuallyPlaced;
+		FluidState modifiedFluidState = getSourceOrFlowingOrEmpty((FlowingFluid) fluidState.getType(), newFSLevel);
+		return new Tuple3<>(fluidState != modifiedFluidState, actuallyPlaced, modifiedFluidState);
+	}
+
+	private static BlockState updateFromFluidState(BlockState oldBlockState, FluidState newFluidState) {
+		if (isFluidBlock(oldBlockState)){ // was fluid
+			return newFluidState.createLegacyBlock(); // create blockstate from fluid
+		} else if (isFluidloggableBlock(oldBlockState)){
+			return setFluidlogged(oldBlockState, !newFluidState.isEmpty());
+		} else { // other blocks => vanilla behaviour
+			return oldBlockState;
+		}
+	}
+
+	/**
+	 * tries setting blockstate and fluidstate for pos. adjusts blockstate if needed (waterlogged, fluidblock level).
+	 * Displaces fluid if needed. If block does not accept fluid and fluid can not be displaced, delete fluid.
+	 *
+	 * @param world
+	 * @param pos
+	 * @param blockState
+	 * @param fluidState
+	 * @return
+	 */
+	public static boolean setBlockAndFluid(World world, BlockPos pos, BlockState blockState, FluidState fluidState, boolean displaceFluid) {
+		return setBlockAndFluid(world, pos, blockState, fluidState, displaceFluid, 3);
+	}
+
+	/**
+	 * tries setting blockstate and fluidstate for pos. adjusts blockstate if needed (waterlogged, fluidblock level).
+	 * Displaces fluid if needed. If block does not accept fluid and fluid can not be displaced, delete fluid.
+	 *
+	 * @param world
+	 * @param pos
+	 * @param blockState
+	 * @param fluidState
+	 * @param flags
+	 * @return
+	 */
+	public static boolean setBlockAndFluid(World world, BlockPos pos, BlockState blockState, FluidState fluidState, boolean displaceFluid, int flags) {
+		return setBlockAndFluid(world, pos, blockState, fluidState, displaceFluid, flags, 512);
+	}
+
+	/**
+	 * tries setting blockstate and fluidstate for pos. adjusts blockstate if needed (waterlogged, fluidblock level).
+	 * Displaces fluid if needed. If block does not accept fluid and fluid can not be displaced, delete fluid.
+	 *
+	 * @param world
+	 * @param pos
+	 * @param blockState
+	 * @param fluidState
+	 * @param displaceFluid
+	 * @param flags
+	 * @param recursion
+	 * @return
+	 */
+	public static boolean setBlockAndFluid(World world, BlockPos pos, BlockState blockState, FluidState fluidState, boolean displaceFluid, int flags, int recursion) {
+		if (canHoldFluid(blockState)) { // can hold fluid => set fluid and (fluid-updated) block
+			BlockState newBlockState = updateFromFluidState(blockState, fluidState);
+			boolean setBlockSuccess = ((WorldMixinInterface) world).setBlockNoFluid(pos, newBlockState, flags);
+			boolean setFluidSuccess = ((WorldMixinInterface) world).setFluid(pos, fluidState, flags);
+			return setBlockSuccess && setFluidSuccess;
+		} else if (!displaceFluid) { // can not hold fluid and dont displace => destroy fluid
+			boolean setBlockSuccess = ((WorldMixinInterface) world).setBlockNoFluid(pos, blockState, flags);
+			boolean setFluidSuccess = ((WorldMixinInterface) world).setFluid(pos, Fluids.EMPTY.defaultFluidState(), flags);
+			return setBlockSuccess && setFluidSuccess;
+		} else if (recursion > 0) { // can not hold fluid => try displacing (prevent infinite recursion)
+			FluidDisplacer displacer = new FluidDisplacer(world, fluidState);
+			// flags = 3 is okay (block and client update + rerender + neighbor changes)
+			return displacer.tryExecute(pos, 3, recursion - 1); // prevent infinite recursion
+		} else { // recursion limit reached: error message with stack trace (but no exception)
+			WPO.LOGGER.error("FFluidStatic.setBlockAndFluid and FluidDisplacer: reached recursion limit!", new Throwable());
+			return false;
+		}
+	}
+
+	public static void scheduleFluidTick(World world, BlockPos pos, FluidState fluidState) {
+		if (!fluidState.isEmpty()) { // only schedule tick if contains fluid
+			FlowingFluid flowingFluid = (FlowingFluid) fluidState.getType(); // safe cast, bc if not empty must be flowing
+			world.getLiquidTicks().scheduleTick(pos, flowingFluid, flowingFluid.getTickDelay(world));
 		}
 	}
 
@@ -298,17 +387,28 @@ public class FFluidStatic {
 		}
 	}
 
+	public static void ejectFluidOrDestroy(World world, BlockPos pos) {
+		boolean success = FFluidStatic.ejectFluid(world, pos);
+		if (!success) { // ejecting failed => destroy fluid
+			((WorldMixinInterface) world).setFluidAndUpdate(pos, Fluids.EMPTY.defaultFluidState());
+		}
+	}
+
 	/**
-	 * ejects fluid contained in oldState and removes fluid from newState
+	 * eject fluid contained in fluidstate at pos
 	 * @param world
 	 * @param pos
+	 * @return whether ejecting succeeded or not
 	 */
-	public static BlockState ejectFluid(ServerWorld world, BlockPos pos, BlockState oldState, BlockState newState) {
-		// TODO schedule for worker thread?
-		// displace fluid contained in oldState
-		FluidDisplacer displacer = new FluidDisplacer(world, oldState);
-		iterateFluidWay(10, pos, displacer); // TODO magic number
-		return removeFluid(newState); // removes fluid from newState
+	public static boolean ejectFluid(World world, BlockPos pos) {
+		FluidState oldFluidState = world.getFluidState(pos);
+		if (oldFluidState.isEmpty()) { // if empty
+			return true; // succeeded at ejecting fluid :)
+		} else { // if contains fluid
+			// displace fluid contained in oldFluidState
+			FluidDisplacer displacer = new FluidDisplacer(world, oldFluidState);
+			return displacer.tryExecute(pos); // return success or not
+		}
 	}
 
 	/**
@@ -336,15 +436,6 @@ public class FFluidStatic {
 			return newState;
 		} else { // if newState can not hold => eject
 			return ejectFluid(world, pos, oldState, newState);
-		}
-	}
-
-	public static BlockState copyFluidOrEject(BlockState newState, ItemUseContext context) { // TODO level, pos, FluidState?, setFluid?
-		World world = context.getLevel();
-		if (!world.isClientSide){
-			return copyFluidOrEject((ServerWorld) world, context.getClickedPos(), newState);
-		} else {
-			return newState;
 		}
 	}
 
@@ -405,12 +496,68 @@ public class FFluidStatic {
 		return f1.isSame(f2);
 	}
 
-	public static int getTickDelay(int oldRate) {
-		// vanilla => water: 5, lava: 30 (10 in nether)
-		return (int) (oldRate * WPOConfig.COMMON.fluidTickRateScaling.get());
+	// ================ OTHER ================== //
+
+	// ================= UTIL ================== //
+	// TODO fix with FlowingFluid.canPassThroughWall()
+	public static boolean canFlow(IBlockReader world, BlockPos fromPos, Direction inDirection) {
+		BlockState state1 = world.getBlockState(fromPos);
+		BlockState state2 = world.getBlockState(fromPos.relative(inDirection));
+		if (state2.canOcclude() && !canHoldFluid(state2)) { // TODO need canOcclude?
+			return false;
+		}
+		VoxelShape voxelShape1 = state1.getCollisionShape(world, fromPos);
+		VoxelShape voxelShape2 = state2.getCollisionShape(world, fromPos.relative(inDirection));
+		if (voxelShape1.isEmpty() && voxelShape2.isEmpty()) {
+			return true;
+		}
+		return !VoxelShapes.mergedFaceOccludes(voxelShape1, voxelShape2, inDirection);
 	}
 
-	// ================ OTHER ================== //
+	public static boolean canFlow(IBlockReader w, BlockPos fromPos, BlockPos toPos, BlockState state1, BlockState state2, Fluid fluid) {
+
+		Fluid f2 = state2.getFluidState().getType();
+		if (f2.isSame(fluid) && state1.getBlock() instanceof FlowingFluidBlock
+				&& state2.getBlock() instanceof FlowingFluidBlock) {
+			return true;
+		}
+
+		FluidPars fp2 = (FluidPars) ((IBlockExtended) state2.getBlock()).getCustomBlockPars().get(FluidPars.class);
+		FluidPars fp1 = (FluidPars) ((IBlockExtended) state1.getBlock()).getCustomBlockPars().get(FluidPars.class);
+		boolean posos = false;
+		if (fp1 != null) {
+			if (fp1.isPassable == 1) {
+				posos = true;
+			}
+		}
+		Direction dir = DirectionStatic.dirFromVec(fromPos, toPos);
+		if (fp2 != null) {
+			if (fp2.isPassable == 1) {
+				// System.out.println(state2);
+				return true;
+			} else if (fp2.isPassable == -1) {
+				return false;
+			}
+			if ((state2.getFluidState().isEmpty() || state1.getFluidState().canBeReplacedWith(w, fromPos, f2, dir))
+					&& fp2.isDestroyableBy(fluid))
+				return true;
+		}
+
+		if (state2.canOcclude() && !posos && !state2.hasProperty(WATERLOGGED)) {
+			return false;
+		}
+		if (!(fluid instanceof WaterFluid) && (state1.hasProperty(WATERLOGGED) || state2.hasProperty(WATERLOGGED))) {
+			return false;
+		}
+		VoxelShape voxelShape1 = state1.getCollisionShape(w, fromPos);
+		VoxelShape voxelShape2 = state2.getCollisionShape(w, toPos);
+		if ((voxelShape1.isEmpty() || posos) && voxelShape2.isEmpty()) {
+			return true;
+		}
+		return !VoxelShapes.mergedFaceOccludes(voxelShape1, voxelShape2, dir);
+	}
+
+	// ================= MIXINS ==================//
 
 	public static Vector3d getVel(IBlockReader w, BlockPos pos, FluidState fs) {
 
@@ -424,7 +571,7 @@ public class FFluidStatic {
 
 		BlockState stateu = w.getBlockState(posu);
 
-		if (canReach(pos, posu, state, stateu, fluid, w) && !stateu.getFluidState().isEmpty()) {
+		if (canFlow(w, pos, posu, state, stateu, fluid) && !stateu.getFluidState().isEmpty()) {
 			level += stateu.getFluidState().getAmount();
 			flag = true;
 		}
@@ -435,7 +582,7 @@ public class FFluidStatic {
 			BlockState state2 = w.getBlockState(pos2);
 			FluidState fs2 = state2.getFluidState();
 
-			if (!fs2.isEmpty() && canReach(pos, pos2, state, state2, fluid, w)) {
+			if (!fs2.isEmpty() && canFlow(w, pos, pos2, state, state2, fluid)) {
 				int lvl2 = fs2.getAmount();
 				if (flag) {
 					FluidState fs2u = w.getFluidState(pos2.above());
@@ -454,161 +601,32 @@ public class FFluidStatic {
 		return vel.normalize();
 	}
 
-	// ================= UTIL ================== //
-	// TODO fix with FlowingFluid.canPassThroughWall()
-	public static boolean canReach(IBlockReader world, BlockPos pos, Direction direction) {
-		BlockState state1 = world.getBlockState(pos);
-		BlockState state2 = world.getBlockState(pos.relative(direction));
-		if (state2.canOcclude() && !state2.hasProperty(WATERLOGGED)) {
-			return false;
-		}
-		VoxelShape voxelShape2 = state2.getCollisionShape(world, pos.relative(direction));
-		VoxelShape voxelShape1 = state1.getCollisionShape(world, pos);
-		if (voxelShape1.isEmpty() && voxelShape2.isEmpty()) {
-			return true;
-		}
-		return !VoxelShapes.mergedFaceOccludes(voxelShape1, voxelShape2, direction);
-	}
-
-	public static boolean canReach(BlockPos pos1, BlockPos pos2, BlockState state1, BlockState state2, Fluid fluid,
-								   IBlockReader w) {
-
-		Fluid f2 = state2.getFluidState().getType();
-		if (f2.isSame(fluid) && state1.getBlock() instanceof FlowingFluidBlock
-				&& state2.getBlock() instanceof FlowingFluidBlock) {
-			return true;
-		}
-
-		FluidPars fp2 = (FluidPars) ((IBlockExtended) state2.getBlock()).getCustomBlockPars().get(FluidPars.class);
-		FluidPars fp1 = (FluidPars) ((IBlockExtended) state1.getBlock()).getCustomBlockPars().get(FluidPars.class);
-		boolean posos = false;
-		if (fp1 != null) {
-			if (fp1.isPassable == 1) {
-				posos = true;
+	/**
+	 * only used by mixin into flowing fluid tick()
+	 * @param world
+	 * @param pos
+	 * @param fluidState
+	 */
+	public static void tickFlowingFluid(World world, BlockPos pos, FluidState fluidState) {
+		if (!fluidState.isEmpty()) { // if empty, skip ticking
+			// TODO lava-water interaction: check LavaFluid.spreadTo() -- config: #lava packets == 1 stone (maybe consume 1 or #lava water packets?)
+			// TODO make water sounds when packets move (ClientWorld.setFluid/setBlock)
+//			if (pRandom.nextInt(64) == 0) {
+//				pLevel.playLocalSound((double)pPos.getX() + 0.5D, (double)pPos.getY() + 0.5D, (double)pPos.getZ() + 0.5D, SoundEvents.WATER_AMBIENT, SoundCategory.BLOCKS, pRandom.nextFloat() * 0.25F + 0.75F, pRandom.nextFloat() + 0.5F, false);
+//			}
+			if (!world.isClientSide) { // only on server new fluid task
+				FluidTasksManager.addFluidTask((ServerWorld) world, pos);
 			}
-		}
-		Direction dir = DirectionStatic.dirFromVec(pos1, pos2);
-		if (fp2 != null) {
-			if (fp2.isPassable == 1) {
-				// System.out.println(state2);
-				return true;
-			} else if (fp2.isPassable == -1) {
-				return false;
-			}
-			if ((state2.getFluidState().isEmpty() || state1.getFluidState().canBeReplacedWith(w, pos1, f2, dir))
-					&& fp2.isDestroyableBy(fluid))
-				return true;
-		}
-
-		if (state2.canOcclude() && !posos && !state2.hasProperty(WATERLOGGED)) {
-			return false;
-		}
-		if (!(fluid instanceof WaterFluid) && (state1.hasProperty(WATERLOGGED) || state2.hasProperty(WATERLOGGED))) {
-			return false;
-		}
-		VoxelShape voxelShape2 = state2.getCollisionShape(w, pos2);
-		VoxelShape voxelShape1 = state1.getCollisionShape(w, pos1);
-		if ((voxelShape1.isEmpty() || posos) && voxelShape2.isEmpty()) {
-			return true;
-		}
-		return !VoxelShapes.mergedFaceOccludes(voxelShape1, voxelShape2, dir);
-	}
-
-	// ================= ITEMS ==================//
-
-	public static boolean iterateFluidWay(int maxRange, BlockPos pos, IFluidActionIteratable actioner) {
-		boolean first = true;
-		boolean client;
-		World w = actioner.getWorld();
-		IWWSG wws = ((IWorldExtended) w).getWWS();
-		Set<BlockPos> setBan = new HashSet<>();
-		Set<BlockPos> setAll = new HashSet<>();
-		client = (wws == null);
-
-		if (!client && setBan.add(pos) && !wws.banPos(pos.asLong())) {
-			setBan.forEach(p -> wws.banPos(p.asLong()));
-			///wws.unbanPoses(setBan);
-			return false;
-		}
-		setAll.add(pos);
-		Set<BlockPos> setLocal = new HashSet<>();
-		actioner.addZero(setLocal, pos);
-		int n = maxRange;
-		while (n > 0 && !actioner.isComplete() && !setLocal.isEmpty()) {
-			--n;
-			Set<BlockPos> setLocal2 = new HashSet<>();
-			for (BlockPos posn : setLocal) {
-				if (first) {
-					first = false;
-					setAll.add(posn);
-					BlockState bs = w.getBlockState(posn);
-					if (!client && setBan.add(posn) && !wws.banPos(posn.asLong())) {
-						//wws.unbanPoses(setBan);
-						setBan.forEach(p -> wws.unbanPos(p.asLong()));
-						return false;
-					}
-					actioner.run(posn, bs);
-					// w.addParticle(ParticleTypes.CLOUD, posn.getX() + 0.5, posn.getY() + 0.5,
-					// posn.getZ() + 0.5, 0, 0, 0);
-				}
-				if (actioner.isComplete()) {
-					break;
-				}
-				for (Direction dir : getRandomizedDirections(w.getRandom(), true)) {
-					BlockPos pos2 = posn.relative(dir);
-					if (setAll.contains(pos2)) {
-						continue;
-					}
-					BlockState bs2 = w.getBlockState(pos2);
-					boolean cr = canReach(w, posn, dir);
-					boolean eq = actioner.isValidState(bs2);
-					if (cr && eq) {
-						setLocal2.add(pos2);
-						if (actioner.isValidPos(pos2)) {
-							if (!client && setBan.add(pos2) && !wws.banPos(pos2.asLong())) {
-								//wws.unbanPoses(setBan);
-								setBan.forEach(p -> wws.unbanPos(p.asLong()));
-								return false;
-							}
-							actioner.run(pos2, bs2);
-						}
-						// w.addParticle(ParticleTypes.CLOUD, pos2.getX() + 0.5, pos2.getY() + 0.5,
-						// pos2.getZ() + 0.5, 0, 0, 0);
-					}
-					// if (!eq) {
-
-					setAll.add(pos2);
-					// }
-					if (actioner.isComplete()) {
-						break;
-					}
-				}
-			}
-			setLocal = setLocal2;
-		}
-		// if (!client) {
-		// for (BlockPos p : setAll) {
-		// if (!wws.banPos(p)) {
-		// wws.unbanPoses(setAll);
-		// System.out.println(p);
-		// return false;
-		// }
-		// }
-		//
-		// }
-		if (actioner.isComplete()) {
-			actioner.finish();
-			if (!client)
-				//wws.unbanPoses(setBan);
-				setBan.forEach(p -> wws.unbanPos(p.asLong()));
-			return true;
-		} else {
-			actioner.fail();
-			if (!client)
-				//wws.unbanPoses(setBan);
-				setBan.forEach(p -> wws.unbanPos(p.asLong()));
-			return false;
 		}
 	}
 
+	/**
+	 * ONLY used for mixin. to schedule tick use Fluid.getTickDelay (already mixed in with this)
+	 * @param oldRate
+	 * @return
+	 */
+	public static int getTickDelay(int oldRate) {
+		// vanilla => water: 5, lava: 30 (10 in nether)
+		return (int) (oldRate * WPOConfig.COMMON.fluidTickRateScaling.get());
+	}
 }

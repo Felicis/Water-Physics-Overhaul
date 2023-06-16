@@ -24,7 +24,7 @@ public class UnusedStatic {
 
             BlockState st = w.getBlockState(pos2);
             FluidState fluidState = st.getFluidState();
-            if (!fluidState.isEmpty() && FFluidStatic.canReach(w, posV, dir.getOpposite())) {
+            if (!fluidState.isEmpty() && FFluidStatic.canFlow(w, posV, dir.getOpposite())) {
                 int lvl0 = fluidState.getAmount();
                 FluidState f2 = w.getFluidState(pos2.above());
                 if (FFluidStatic.isSameFluid(state.getType(), f2.getType())) {
@@ -70,7 +70,7 @@ public class UnusedStatic {
             sl += dfs.getOwnHeight();
             i++;
             s = true;
-        } else if (dfs.isEmpty() && FFluidStatic.canReach(w, p, Direction.getNearest(dir.getX(), 0, 0))) {
+        } else if (dfs.isEmpty() && FFluidStatic.canFlow(w, p, Direction.getNearest(dir.getX(), 0, 0))) {
             BlockPos downp = dp.below();
             FluidState downfs = w.getFluidState(downp);
             if (!downfs.isEmpty() && FFluidStatic.isSameFluid(downfs.getType(), f) && downfs.getOwnHeight() == 1.0F) {
@@ -88,7 +88,7 @@ public class UnusedStatic {
             sl += dfs2.getOwnHeight();
             i++;
             s = true;
-        } else if (dfs2.isEmpty() && FFluidStatic.canReach(w, p, Direction.getNearest(0, 0, dir.getZ()))) {
+        } else if (dfs2.isEmpty() && FFluidStatic.canFlow(w, p, Direction.getNearest(0, 0, dir.getZ()))) {
             BlockPos downp = dp2.below();
             FluidState downfs = w.getFluidState(downp);
             if (!downfs.isEmpty() && FFluidStatic.isSameFluid(downfs.getType(), f) && downfs.getOwnHeight() == 1.0F) {
@@ -113,7 +113,7 @@ public class UnusedStatic {
                 BlockPos downp = dp3.below();
                 FluidState downfs = w.getFluidState(downp);
                 if (!downfs.isEmpty() && FFluidStatic.isSameFluid(downfs.getType(), f) && downfs.getOwnHeight() == 1.0F
-                        && FFluidStatic.canReach(w, dp3, Direction.getNearest(0, 1, 0))) {
+                        && FFluidStatic.canFlow(w, dp3, Direction.getNearest(0, 1, 0))) {
                     return 0.0F;
                 }
             }

@@ -117,7 +117,7 @@ public class PumpTileEntity extends BasicTankEntity implements IConnectionSides 
 		}
 		// System.out.println(timer);
 
-		if (FFluidStatic.canReach(suckPos, worldPosition, suckState, Blocks.AIR.defaultBlockState(), sucF, level)) {
+		if (FFluidStatic.canFlow(level, suckPos, worldPosition, suckState, Blocks.AIR.defaultBlockState(), sucF)) {
 			int dl = (500 - am) / 125;
 			int lvl = suckFs.getAmount();
 			dl = lvl >= dl ? dl : lvl;

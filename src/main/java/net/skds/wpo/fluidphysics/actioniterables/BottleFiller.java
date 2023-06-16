@@ -1,82 +1,69 @@
 package net.skds.wpo.fluidphysics.actioniterables;
 
 import it.unimi.dsi.fastutil.longs.Long2ObjectLinkedOpenHashMap;
-import net.minecraft.block.BlockState;
 import net.minecraft.fluid.FlowingFluid;
 import net.minecraft.fluid.FluidState;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.ActionResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
+import net.skds.wpo.WPOConfig;
 import net.skds.wpo.fluidphysics.FFluidStatic;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+import net.skds.wpo.util.tuples.Tuple2;
 
-import static net.minecraft.state.properties.BlockStateProperties.WATERLOGGED;
+public class BottleFiller extends AbstractFluidActionIterable<Void> {
 
-public class BottleFiller implements IFluidActionIteratable {
-
-    int bucketLevels = 3;
+    int bottleLevels = 3;
     int sl = 0;
     boolean complete = false;
     World world;
-    ItemStack bottle;
     FlowingFluid fluid;
-    CallbackInfoReturnable<ActionResult<ItemStack>> ci;
-    Long2ObjectLinkedOpenHashMap<BlockState> states = new Long2ObjectLinkedOpenHashMap<>();
+    Long2ObjectLinkedOpenHashMap<FluidState> states = new Long2ObjectLinkedOpenHashMap<>();
 
-    public BottleFiller(World w, FlowingFluid f, CallbackInfoReturnable<ActionResult<ItemStack>> ci, ItemStack stack) {
+    public BottleFiller(World w, FlowingFluid f) {
         world = w;
         fluid = f;
-        bottle = stack;
-        this.ci = ci;
     }
 
     @Override
-    public boolean isComplete() {
+    protected int getMaxRange() {
+        return WPOConfig.COMMON.maxBucketDist.get();
+    }
+
+    @Override
+    protected boolean isComplete() {
         return complete;
     }
 
     @Override
-    public void run(BlockPos pos, BlockState state) {
-        // world.addParticle(ParticleTypes.CLOUD, pos.getX() + 0.5, pos.getY() + 0.5,
-        // pos.getZ() + 0.5, 0, 0, 0);
-
-        if (false && state.getValue(WATERLOGGED)) {
-            states.clear();
-            states.put(pos.asLong(), FFluidStatic.forceApplyFluid(state, 0, fluid));
-            complete = true;
-            return;
-        }
-        FluidState fs = state.getFluidState();
-        int l = fs.getAmount();
-        int osl = sl;
-        sl += l;
-        int nl = 0;
-        if (sl >= bucketLevels) {
-            nl = sl - bucketLevels;
-            complete = true;
-        }
-        if (osl != sl)
-            states.put(pos.asLong(), FFluidStatic.forceApplyFluid(state, nl, fluid));
-    }
-
-    @Override
-    public World getWorld() {
+    protected World getWorld() {
         return world;
     }
 
     @Override
-    public boolean isValidState(BlockState state) {
-        return fluid.isSame(state.getFluidState().getType());
+    protected boolean isValidPos(BlockPos pos) {
+        FluidState fluidState = world.getFluidState(pos);
+        return fluid.isSame(fluidState.getType()); // implies not empty and not zero levels
     }
 
     @Override
-    public void finish() {
-        ActionIterableUtils.multiSetBlockAndUpdate(states, world);
+    protected void process(BlockPos pos) {
+        Tuple2<Integer, FluidState> takenLvlsAndNewFS = FFluidStatic.takeLevelsUpTo(world.getFluidState(pos), bottleLevels);
+        Integer takenLevels = takenLvlsAndNewFS.first;
+        FluidState newFluidState = takenLvlsAndNewFS.second;
+        if (takenLevels > 0) { // levels were actually taken
+            bottleLevels -= takenLevels;
+            complete = (bottleLevels == 0);
+            states.put(pos.asLong(), newFluidState);
+        } // else do nothing
     }
 
     @Override
-    public void fail() {
-        ci.setReturnValue(ActionResult.fail(bottle));
+    protected Void finishSuccess(int flags, int recursion) {
+        multiSetFluid(states, flags, recursion);
+        return null;
+    }
+
+    @Override
+    protected Void finishFail(int flags, int recursion) {
+        return null;
     }
 }

@@ -11,6 +11,7 @@
     "block.other.BlockMixin",
     "block.other.BushBlockMixin",
     "block.other.ConcretePowderBlockMixin",
+    "block.other.PistonBlockMixin",
     "block.other.SpreadableSnowyDirtBlockMixin",
     "block.withfluidphysics.FlowingFluidBlockMixin",
     "block.withfluidphysics.notvanillawaterloggable.FlowerPotBlockMixin",

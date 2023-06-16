@@ -24,10 +24,10 @@ import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ICapabilityProvider;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.FluidStack;
+import net.minecraftforge.fluids.capability.templates.FluidHandlerItemStack;
 import net.skds.wpo.client.models.ISTER;
 import net.skds.wpo.fluidphysics.FFluidStatic;
 import net.skds.wpo.util.Constants;
-import net.skds.wpo.util.ExtendedFHIS;
 
 public class AdvancedBucket extends BucketItem implements ICapabilityProvider {
 
@@ -35,7 +35,7 @@ public class AdvancedBucket extends BucketItem implements ICapabilityProvider {
 		super(() -> fluid, builder);
 	}
 
-	private ExtendedFHIS fhis;
+	private FluidHandler fluidHandler;
 
 	public static AdvancedBucket getBucketForReg(Fluid fluid) {
 		Properties prop = new Properties().stacksTo(fluid == Fluids.EMPTY ? 16 : 1)
@@ -52,7 +52,7 @@ public class AdvancedBucket extends BucketItem implements ICapabilityProvider {
 	@OnlyIn(Dist.CLIENT)
 	public void appendHoverText(ItemStack stack, @Nullable World worldIn, List<ITextComponent> tooltip,
 			ITooltipFlag flagIn) {
-		ExtendedFHIS fh = new ExtendedFHIS(stack, 1000);
+		FluidHandler fh = new FluidHandler(stack);
 		FluidStack fst = fh.getFluid();
 		Fluid f = fst.getFluid();
 		//Block b = f.getDefaultState().getBlockState().getBlock();
@@ -67,19 +67,30 @@ public class AdvancedBucket extends BucketItem implements ICapabilityProvider {
 	@Override
 	public net.minecraftforge.common.capabilities.ICapabilityProvider initCapabilities(ItemStack stack,
 			@Nullable net.minecraft.nbt.CompoundNBT nbt) {
-		fhis = new ExtendedFHIS(stack, 1000);
-		return fhis;
+		fluidHandler = new FluidHandler(stack);
+		return fluidHandler;
 	}
 
 	@Override
 	public <T> LazyOptional<T> getCapability(Capability<T> cap, Direction side) {
-		return fhis.getCapability(cap);
+		return fluidHandler.getCapability(cap);
 	}
 
-	public static void updateDamage(ItemStack stack) {
-		ExtendedFHIS fst = new ExtendedFHIS(stack, 1000);
-		int sl = fst.getFluid().getAmount() / FFluidStatic.MILLIBUCKETS_PER_LEVEL;
-		stack.setDamageValue(Constants.MAX_FLUID_LEVEL - sl);
-	}
+	public static class FluidHandler extends FluidHandlerItemStack {
 
+		public FluidHandler(ItemStack container) {
+			super(container, 1000); // bucket contains 1000 mb
+		}
+
+		protected void setFluid(FluidStack fluid) {
+			super.setFluid(fluid);
+			updateDamage(container);
+		}
+
+		private void updateDamage(ItemStack stack) {
+			FluidHandler fst = new FluidHandler(stack);
+			int containedLevels = fst.getFluid().getAmount() / FFluidStatic.MILLIBUCKETS_PER_LEVEL;
+			stack.setDamageValue(Constants.MAX_FLUID_LEVEL - containedLevels);
+		}
+	}
 }

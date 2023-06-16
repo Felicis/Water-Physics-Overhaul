@@ -104,7 +104,7 @@ public class FluidGateTileEntity extends BasicTankEntity
 				return;
 			}
 
-			if (FFluidStatic.canReach(worldPosition, flowPos, Blocks.AIR.defaultBlockState(), flowState, tF, level)) {
+			if (FFluidStatic.canFlow(level, worldPosition, flowPos, Blocks.AIR.defaultBlockState(), flowState, tF)) {
 				int dl = am / 125;
 				int lvl = flowFs.getAmount();
 				dl = 8 - lvl >= dl ? dl : 8 - lvl;

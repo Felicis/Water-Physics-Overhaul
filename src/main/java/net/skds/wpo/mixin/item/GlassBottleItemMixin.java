@@ -1,6 +1,10 @@
 package net.skds.wpo.mixin.item;
 
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.BlockRayTraceResult;
+import net.minecraft.util.math.RayTraceContext;
 import net.skds.wpo.fluidphysics.EventStatic;
+import net.skds.wpo.fluidphysics.RenderStatic;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -28,9 +32,13 @@ public class GlassBottleItemMixin {
 	public void bbb(World w, PlayerEntity p, Hand hand, CallbackInfoReturnable<ActionResult<ItemStack>> ci) {
 		// inject to only change fluid level where water was collected (water bottle created and returned after mixin)
 		// only allows Water pickup!! (else mixin before fluid type check & add other fluid bottles)
-		EventStatic.onBottleUse(w, p, ci, p.getItemInHand(hand));
+		BlockRayTraceResult rt = RenderStatic.rayTrace(w, p, RayTraceContext.FluidMode.ANY);
+		BlockPos pos = rt.getBlockPos();
+		boolean success = EventStatic.onBottleUse(w, pos); // try slurping water for bottle from this pos (return success)
+		if (success) {
+			return;
+		} else {
+			ci.setReturnValue(ActionResult.pass(p.getItemInHand(hand)));
+		}
 	}
-
-	// ================= SHADOW ================ //
-
 }

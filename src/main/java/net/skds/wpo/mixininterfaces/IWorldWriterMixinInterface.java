@@ -5,8 +5,6 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraftforge.common.util.Constants;
 
 public interface IWorldWriterMixinInterface { // IWorldWriter has no superclasses
-    boolean setFluid(BlockPos pPos, FluidState pFluidState, int pFlags, int pRecursionLeft);
-
     /**
      * Sets a fluid state into this world.Flags are as follows: (also check {@link Constants.BlockFlags})
      * 1 will cause a block update.
@@ -19,9 +17,10 @@ public interface IWorldWriterMixinInterface { // IWorldWriter has no superclasse
      * Flags can be OR-ed
      */
     default boolean setFluid(BlockPos pPos, FluidState pNewState, int pFlags) {
-        // SKIPPING OVERRIDE in World: setBlock is overridden in World with same body as in IWorldWriter?!
         return this.setFluid(pPos, pNewState, pFlags, 512);
     }
+
+    boolean setFluid(BlockPos pPos, FluidState pFluidState, int pFlags, int pRecursionLeft);
 
     boolean removeFluid(BlockPos pPos, boolean pIsMoving);
 

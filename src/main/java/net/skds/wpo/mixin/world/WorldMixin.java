@@ -1,5 +1,6 @@
 package net.skds.wpo.mixin.world;
 
+import net.minecraft.block.BlockState;
 import net.minecraft.crash.CrashReport;
 import net.minecraft.crash.CrashReportCategory;
 import net.minecraft.crash.ReportedException;
@@ -15,12 +16,15 @@ import net.minecraft.world.chunk.Chunk;
 import net.minecraft.world.server.ChunkHolder;
 import net.minecraftforge.common.capabilities.CapabilityProvider;
 import net.minecraftforge.common.extensions.IForgeWorld;
+import net.skds.wpo.fluidphysics.FFluidStatic;
 import net.skds.wpo.mixininterfaces.FluidMixinInterface;
 import net.skds.wpo.mixininterfaces.FluidStateMixinInterface;
 import net.skds.wpo.mixininterfaces.*;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Redirect;
 
 import javax.annotation.Nullable;
 
@@ -43,11 +47,46 @@ public abstract class WorldMixin extends CapabilityProvider<World> implements Wo
         super(baseClass);
     }
 
+    @Redirect(method = "setBlock(Lnet/minecraft/util/math/BlockPos;Lnet/minecraft/block/BlockState;I)Z", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/World;setBlock(Lnet/minecraft/util/math/BlockPos;Lnet/minecraft/block/BlockState;II)Z"))
+    private boolean setBlock_AlsoFluid(World world, BlockPos pos, BlockState blockState, int pFlags, int pRecursionLeft) {
+        // set blockstate adapted to fluidstate or displace fluid
+        FluidState fluidState = world.getFluidState(pos);
+        return FFluidStatic.setBlockAndFluid(world, pos, blockState, fluidState, true, pFlags, pRecursionLeft); // UPGRADE mixin direct usages of this method
+    }
+
+    /**
+     * use this from inside WPO fluid handling, when the blockstate is already adapted to the fluid.<br/>
+     * Do not use setBlock directly
+     * @param pPos
+     * @param pNewState
+     * @return
+     */
+    @Override
+    public boolean setBlockNoFluid(BlockPos pPos, BlockState pNewState) {
+        return ((World) (Object) this).setBlock(pPos, pNewState, 3, 512);
+    }
+
+    /**
+     * use this from inside WPO fluid handling, when the blockstate is already adapted to the fluid.
+     * @param pPos
+     * @param pNewState
+     * @param pFlags
+     * @return
+     */
+    @Override
+    public boolean setBlockNoFluid(BlockPos pPos, BlockState pNewState, int pFlags) {
+        return ((World) (Object) this).setBlock(pPos, pNewState, pFlags, 512);
+    }
+
     @Override
     public boolean containsAnyLiquid(AxisAlignedBB pBb) {
         return ((IWorldReaderMixinInterface) this).containsAnyLiquidM(pBb);
     }
 
+    @Override // kinda superfluous override (copied from setBlock), but you never know
+    public boolean setFluid(BlockPos pPos, FluidState pNewState, int pFlags) {
+        return this.setFluid(pPos, pNewState, pFlags, 512);
+    }
     @Override
     public boolean setFluid(BlockPos pPos, FluidState pFluidState, int pFlags, int pRecursionLeft) {
         // copied from World.setBlock
@@ -62,7 +101,7 @@ public abstract class WorldMixin extends CapabilityProvider<World> implements Wo
             // CHANGE skip BlockSnapshot creation (only used for forge events; maybe add onFluidPlace event in future...)
 
             FluidState oldFluidState = ((IChunkMixinInterface) chunk).setFluidState(pPos, pFluidState, (pFlags & 64) != 0);
-            if (oldFluidState == null) {
+            if (oldFluidState == null) { // failed or state unchanged
                 // CHANGE skip BlockSnapshot check
                 return false;
             } else {
@@ -74,9 +113,16 @@ public abstract class WorldMixin extends CapabilityProvider<World> implements Wo
         }
     }
 
+    public void setFluidsDirty(BlockPos pBlockPos, FluidState pOldState, FluidState pNewState) {
+        // nop (for server; client has implementation)
+    }
+
     // SKIPPED destroyFluid: destroyBlock handles block dropping, but fluids do not drop
 
+    // SKIPPED destroyBlock->setBlock Redirect: handles fluids already correctly (block replaced with fluid block and fluidstate unchanged)
+
     /**
+     * only runs when setFluidState successful: state correctly set (correct fluid) && state actually changed (updates needed)
      * for flags also check: {@link net.minecraftforge.common.util.Constants.BlockFlags}
      */
     public void markAndNotifyFluid(BlockPos pPos, @Nullable Chunk chunk, FluidState oldFluidState, FluidState newFluidState, int pFlags, int pRecursionLeft) {
@@ -85,32 +131,32 @@ public abstract class WorldMixin extends CapabilityProvider<World> implements Wo
         FluidState currentFluidState = getFluidState(pPos);
         // removed useless braces
         if (currentFluidState == newFluidState) {
+            // client => set dirty
             if (oldFluidState != currentFluidState) {
                 this.setFluidsDirty(pPos, oldFluidState, currentFluidState);
             }
 
             // if BLOCK_UPDATE && (isServer || NO_RERENDER) && (isClient || chunk is TICKING or closer)
-            // => send update to clients
+            // server => send update to clients
             if ((pFlags & 2) != 0 && (!this.isClientSide || (pFlags & 4) == 0) && (this.isClientSide || chunk.getFullStatus() != null && chunk.getFullStatus().isOrAfter(ChunkHolder.LocationType.TICKING))) {
                 this.sendFluidUpdated(pPos, oldFluidState, newFluidState, pFlags); // send fluidstate change to clients (sets to be sent on next chunk tick)
             }
 
             // if NOTIFY_NEIGHBORS
-            // => World.updateNeighborsAt()->for neighbors: World.neighborChanged()->BlockState.neighborChanged()->Block.neighborChanged()
+            // calls ServerWorld.updateNeighborsAt()->for neighbors: World.neighborChanged()->BlockState.neighborChanged()->Block.neighborChanged()
             if ((pFlags & 1) != 0) {
                 ((IWorldMixinInterface) this).fluidUpdated(pPos, oldFluidState.getType());
-                // TODO skip analog output signal?
+                // TODO skip? (block variant only used for analog output signal/redstone)
             }
 
             // if UPDATE_NEIGHBORS
+            // TODO equalize through: a) add fluid tick OR b) updateNeighbors ?
             if ((pFlags & 16) == 0 && pRecursionLeft > 0) {
                 int i = pFlags & -34; // -34 = 0b1101_1110 => drop: NOTIFY_NEIGHBORS + NO_NEIGHBOR_DROPS (keep UPDATE_NEIGHBORS)
-                // update diagonally given this old state
-                ((FluidStateMixinInterface) (Object) oldFluidState).updateIndirectNeighbourShapes(this, pPos, i, pRecursionLeft - 1);
-                // updates state of each neighbor given this new state and sets new neighbor states
+                // CHANGE skip diagonal updates (fluid flows only through sides)
+                // update state of each neighbor given this new state and sets new neighbor states
                 ((FluidStateMixinInterface) (Object) newFluidState).updateNeighbourShapes(this, pPos, i, pRecursionLeft - 1);
-                // update diagonally given this new state
-                ((FluidStateMixinInterface) (Object) newFluidState).updateIndirectNeighbourShapes(this, pPos, i, pRecursionLeft - 1);
+                // CHANGE skip diagonal updates
             }
 
             // CHANGE: skip this.onFluidStateChange (orig: onBlockStateChange), because it only updates POI blockstates (afaik fluidstates are not POIs)
