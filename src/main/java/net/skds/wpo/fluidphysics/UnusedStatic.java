@@ -23,7 +23,7 @@ public class UnusedStatic {
             BlockPos pos2 = posV.relative(dir);
 
             BlockState st = w.getBlockState(pos2);
-            FluidState fluidState = st.getFluidState();
+            FluidState fluidState = w.getFluidState(pos2);
             if (!fluidState.isEmpty() && FFluidStatic.canFlow(w, posV, dir.getOpposite())) {
                 int lvl0 = fluidState.getAmount();
                 FluidState f2 = w.getFluidState(pos2.above());

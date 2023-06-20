@@ -3,7 +3,6 @@ package net.skds.wpo.block.tileentity;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.fluid.FlowingFluid;
-import net.minecraft.fluid.Fluid;
 import net.minecraft.fluid.FluidState;
 import net.minecraft.tileentity.ITickableTileEntity;
 import net.minecraft.tileentity.TileEntity;
@@ -11,6 +10,8 @@ import net.minecraft.tileentity.TileEntityType;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.fluids.capability.templates.FluidTank;
 import net.skds.wpo.fluidphysics.FFluidStatic;
+import net.skds.wpo.fluidphysics.actioniterables.FluidDisplacer;
+import net.skds.wpo.util.Constants;
 import net.skds.wpo.util.api.IPressuredTank;
 
 public abstract class BasicTankEntity extends TileEntity implements ITickableTileEntity, IPressuredTank, IFluidHandler {
@@ -40,7 +41,7 @@ public abstract class BasicTankEntity extends TileEntity implements ITickableTil
 		FlowingFluid tf = (FlowingFluid) tank.getFluid().getFluid();
 		BlockState state0 = level.getBlockState(worldPosition);
 		int lvl = tank.getFluid().getAmount() / 125;
-		FluidState fs = state0.getFluidState();
+		FluidState fs = level.getFluidState(worldPosition);
 		if (!fs.isEmpty() && fs.getType().isSame(tf)) {
 			lvl += fs.getAmount();
 			if (lvl > 8) {
@@ -50,7 +51,7 @@ public abstract class BasicTankEntity extends TileEntity implements ITickableTil
 			state0 = Blocks.AIR.defaultBlockState();
 		}
 		//System.out.println(state0);
-		BlockState ns = FFluidStatic.forceApplyFluid(state0, lvl, tf);
-		level.setBlockAndUpdate(worldPosition, ns);
+//		BlockState ns = FFluidStatic.forceApplyFluid(state0, lvl, tf);
+//		level.setBlockAndUpdate(worldPosition, ns);
 	}	
 }

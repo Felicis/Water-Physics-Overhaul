@@ -28,8 +28,8 @@ public abstract class AbstractBlockStateMixin {
 	 */
 	@Inject(method = "getFluidState", at = @At(value = "HEAD"), cancellable = true)
 	public void getFluidStateM(CallbackInfoReturnable<FluidState> cir) throws Exception {
-		throw new Exception("AbstractBlockState.getFluidState() was called!!!!");
-//		WPO.LOGGER.error("AbstractBlockState.getFluidState() was called!!!!"); // TODO exception for debugging?
+		WPO.LOGGER.error("AbstractBlockState.getFluidState() was called!!!!", new Throwable());
+//		throw new Exception("AbstractBlockState.getFluidState() was called!!!!");
 //		cir.setReturnValue(null);
 	}
 

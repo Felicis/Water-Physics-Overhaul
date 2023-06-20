@@ -75,11 +75,6 @@ public abstract class FluidStateMixin extends StateHolder<Fluid, FluidState> imp
     }
 
     @Override
-    public void updateIndirectNeighbourShapes(IWorld pLevel, BlockPos pPos, int pFlags, int pRecursionLeft) {
-        ((FluidMixinInterface) this.getType()).updateIndirectNeighbourShapes(this.getFluidState(), pLevel, pPos, pFlags, pRecursionLeft);
-    }
-
-    @Override
     public boolean skipRendering(FluidState pAdjacentState, Direction pSide) {
         return pAdjacentState.getType().isSame(this.getType());
     }

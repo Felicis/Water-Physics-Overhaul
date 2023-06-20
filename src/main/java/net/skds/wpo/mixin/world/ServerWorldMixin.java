@@ -3,6 +3,7 @@ package net.skds.wpo.mixin.world;
 import net.minecraft.block.BlockState;
 import net.minecraft.fluid.Fluid;
 import net.minecraft.fluid.FluidState;
+import net.minecraft.fluid.Fluids;
 import net.minecraft.profiler.IProfiler;
 import net.minecraft.util.RegistryKey;
 import net.minecraft.util.math.AxisAlignedBB;
@@ -58,13 +59,13 @@ public abstract class ServerWorldMixin extends World implements WorldMixinInterf
     }
 
     @Redirect(method = "tickChunk", at = @At(value = "INVOKE", target = "Lnet/minecraft/block/BlockState;getFluidState()Lnet/minecraft/fluid/FluidState;"))
-    private FluidState getFluidStateNull(BlockState instance) {
-        return null; // NOP: BlockState.getFluidState() should not be called. Will not crash because next mixin redirects FluidState.isRandomlyTicking
+    private FluidState getFluidStateEmpty(BlockState instance) {
+        return Fluids.EMPTY.defaultFluidState(); // NOP: BlockState.getFluidState() should not be called. Empty fluid is only fill-in so next FluidState.isRandomlyTicking does not crash
     }
 
     @Redirect(method = "tickChunk", at = @At(value = "INVOKE", target = "Lnet/minecraft/fluid/FluidState;isRandomlyTicking()Z"))
     private boolean isRandomlyTickingFalse(FluidState instance) {
-        return true; // NOP: fluidstates were already ticked in getBlockState redirect
+        return false; // NOP: fluidstates were already ticked in getBlockState redirect
     }
 
     /**
@@ -76,7 +77,7 @@ public abstract class ServerWorldMixin extends World implements WorldMixinInterf
      * @param pFlags
      */
     public void sendFluidUpdated(BlockPos pPos, FluidState pOldState, FluidState pNewState, int pFlags) {
-        // used in:
+        // UPGRADE block version used in:
         // - World.markAndNotifyBlock()
         // - BlockSnapshot.restoreToLocation()
         // - ... block entity stuff (not used for fluid states)

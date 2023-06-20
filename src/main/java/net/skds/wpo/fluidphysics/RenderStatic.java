@@ -41,25 +41,25 @@ public class RenderStatic {
         float offset2 = 0.99999F;
 
         BlockPos posd = null;
-        BlockState stated = null;
+        FluidState stated = null;
 
-        BlockState state = w.getBlockState(pos);
-        float level = state.getFluidState().getOwnHeight();
+        FluidState state = w.getFluidState(pos);
+        float level = state.getOwnHeight();
         float[] sum = new float[] { level, level, level, level };
 
         BlockPos posu = pos.above();
         BlockState statu = w.getBlockState(posu);
         FluidState ufs = w.getFluidState(posu);
 
-        boolean posus = FFluidStatic.canFlow(w, pos, posu, state, statu, fluid);
+        boolean posus = FFluidStatic.canFlow(w, pos, Direction.UP);
 
         if (fluid.isSame(ufs.getType()) && posus) {
             return new float[] { 1.0F, 1.0F, 1.0F, 1.0F };
         }
 
         posd = pos.below();
-        stated = w.getBlockState(posd);
-        downsuc = (stated.getFluidState().getType().isSame(fluid));
+        stated = w.getFluidState(posd);
+        downsuc = (stated.getType().isSame(fluid));
 
         if (posus) {
             offset2 = 1.0F;
@@ -76,16 +76,16 @@ public class RenderStatic {
             // ++n;
             int n2 = n > 0 ? n - 1 : 3;
             BlockPos pos2 = pos.relative(dir);
-            BlockState state2 = w.getBlockState(pos2);
+            FluidState state2 = w.getFluidState(pos2);
 
-            boolean reach2 = FFluidStatic.canFlow(w, pos, pos2, state, state2, fluid);
-            boolean same2 = state2.getFluidState().getType().isSame(fluid);
+            boolean reach2 = FFluidStatic.canFlow(w, pos, dir);
+            boolean same2 = state2.getType().isSame(fluid);
             if (same2 && reach2) {
 
                 BlockPos pos2u = pos2.above();
-                BlockState state2u = w.getBlockState(pos2u);
-                if (state2u.getFluidState().getType().isSame(fluid)
-                        && FFluidStatic.canFlow(w, pos2, pos2u, state2, state2u, fluid)) {
+                FluidState state2u = w.getFluidState(pos2u);
+                if (state2u.getType().isSame(fluid)
+                        && FFluidStatic.canFlow(w, pos2, Direction.UP)) {
                     conner[n] = true;
                     conner[n2] = true;
                     setconner[n] = true;
@@ -93,7 +93,7 @@ public class RenderStatic {
                     setconnervl[n] = offset2;
                     setconnervl[n2] = offset2;
                 } else {
-                    float level2 = state2.getFluidState().getOwnHeight();
+                    float level2 = state2.getOwnHeight();
                     sum[n] += level2;
                     sum[n2] += level2;
                     count[n]++;
@@ -111,15 +111,15 @@ public class RenderStatic {
                         continue;
                     }
                     BlockPos pos2dir = pos2.relative(dirside[i]);
-                    BlockState state2dir = w.getBlockState(pos2dir);
-                    if (FFluidStatic.canFlow(w, pos2, pos2dir, state2, state2dir, fluid)) {
+                    FluidState state2dir = w.getFluidState(pos2dir);
+                    if (FFluidStatic.canFlow(w, pos2, dirside[i])) {
 
-                        if (state2dir.getFluidState().getType().isSame(fluid)) {
+                        if (state2dir.getType().isSame(fluid)) {
 
                             BlockPos pos2diru = pos2dir.above();
-                            BlockState state2diru = w.getBlockState(pos2diru);
-                            if (state2diru.getFluidState().getType().isSame(fluid)
-                                    && FFluidStatic.canFlow(w, pos2dir, pos2diru, state2dir, state2diru, fluid)) {
+                            FluidState state2diru = w.getFluidState(pos2diru);
+                            if (state2diru.getType().isSame(fluid)
+                                    && FFluidStatic.canFlow(w, pos2dir, Direction.UP)) {
                                 if (i == 0) {
                                     setconnervl[n2] = offset2;
                                     setconner[n2] = true;
@@ -130,7 +130,7 @@ public class RenderStatic {
                                     conner[n] = true;
                                 }
                             } else {
-                                float level2dir = state2dir.getFluidState().getOwnHeight();
+                                float level2dir = state2dir.getOwnHeight();
                                 if (i == 0) {
                                     sum[n2] += level2dir;
                                     count[n2]++;
@@ -142,11 +142,11 @@ public class RenderStatic {
                                 }
                             }
 
-                        } else if (state2dir.getFluidState().isEmpty()) {
+                        } else if (state2dir.isEmpty()) {
                             BlockPos pos2dird = pos2dir.below();
-                            BlockState state2dird = w.getBlockState(pos2dird);
-                            if (state2dird.getFluidState().getType().isSame(fluid)
-                                    && FFluidStatic.canFlow(w, pos2dir, pos2dird, state2dir, state2dird, fluid)) {
+                            FluidState state2dird = w.getFluidState(pos2dird);
+                            if (state2dird.getType().isSame(fluid)
+                                    && FFluidStatic.canFlow(w, pos2dir, Direction.DOWN)) {
                                 if (i == 0) {
                                     if (!setconner[n2])
                                         setconnervl[n2] = offset;
@@ -166,9 +166,9 @@ public class RenderStatic {
 
                 if (reach2) {
                     BlockPos pos2d = pos2.below();
-                    BlockState state2d = w.getBlockState(pos2d);
-                    if (state2d.getFluidState().getType().isSame(fluid)
-                            && FFluidStatic.canFlow(w, pos2, pos2d, state2, state2d, fluid)) {
+                    FluidState state2d = w.getFluidState(pos2d);
+                    if (state2d.getType().isSame(fluid)
+                            && FFluidStatic.canFlow(w, pos2, Direction.DOWN)) {
                         if (!setconner[n]) {
                             setconner[n] = true;
                             setconnervl[n] = offset;

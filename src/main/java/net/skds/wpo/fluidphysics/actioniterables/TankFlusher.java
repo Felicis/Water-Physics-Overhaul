@@ -2,23 +2,16 @@ package net.skds.wpo.fluidphysics.actioniterables;
 
 import it.unimi.dsi.fastutil.longs.Long2ObjectLinkedOpenHashMap;
 import net.minecraft.block.BlockState;
-import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.fluid.FlowingFluid;
 import net.minecraft.fluid.FluidState;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
-import net.minecraft.stats.Stats;
-import net.minecraft.tags.FluidTags;
-import net.minecraft.util.SoundEvent;
-import net.minecraft.util.SoundEvents;
+import net.minecraft.fluid.Fluids;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
-import net.minecraftforge.event.entity.player.FillBucketEvent;
-import net.minecraftforge.eventbus.api.Event;
+import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandlerItem;
 import net.skds.wpo.WPOConfig;
 import net.skds.wpo.fluidphysics.FFluidStatic;
+import net.skds.wpo.util.Constants;
 import net.skds.wpo.util.tuples.Tuple3;
 
 public class TankFlusher extends AbstractFluidActionIterable<Integer> {
@@ -38,12 +31,16 @@ public class TankFlusher extends AbstractFluidActionIterable<Integer> {
      * @param fluidHandler
      */
     public TankFlusher(World world, IFluidHandlerItem fluidHandler) {
-        this.world = world;
         this.fluidHandler = fluidHandler;
-        // TODO config max levels to place?
-        initalTankLevel = this.fluidHandler.getFluidInTank(0).getAmount() / FFluidStatic.MILLIBUCKETS_PER_LEVEL;
-        levelsToPlace = initalTankLevel;
-        tankFluid = (FlowingFluid) this.fluidHandler.getFluidInTank(0).getFluid();
+        if (this.fluidHandler.getFluidInTank(0).isEmpty()) {
+            complete = true; // no fluid in tank
+        } else {
+            tankFluid = (FlowingFluid) this.fluidHandler.getFluidInTank(0).getFluid(); // safe cast because not empty
+            this.world = world;
+            // TODO config max levels to place?
+            initalTankLevel = this.fluidHandler.getFluidInTank(0).getAmount() / Constants.MILLIBUCKETS_PER_LEVEL;
+            levelsToPlace = initalTankLevel;
+        }
     }
 
     @Override
@@ -75,7 +72,7 @@ public class TankFlusher extends AbstractFluidActionIterable<Integer> {
     @Override
     protected void process(BlockPos pos) {
         FluidState state = world.getFluidState(pos);
-        Tuple3<Boolean, Integer, FluidState> tuple3 = FFluidStatic.placeLevelsUpTo(state, levelsToPlace);
+        Tuple3<Boolean, Integer, FluidState> tuple3 = FFluidStatic.placeLevelsUpTo(state, tankFluid, levelsToPlace);
         Boolean wasPlaced = tuple3.first;
         Integer placedLevels = tuple3.second;
         FluidState newFluidState = tuple3.third;

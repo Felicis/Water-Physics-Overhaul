@@ -8,7 +8,12 @@ import net.minecraft.world.World;
 import net.minecraftforge.fluids.capability.IFluidHandlerItem;
 import net.skds.wpo.WPOConfig;
 import net.skds.wpo.fluidphysics.FFluidStatic;
+import net.skds.wpo.util.Constants;
 import net.skds.wpo.util.tuples.Tuple2;
+
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
 
 public class TankFiller extends AbstractFluidActionIterable<Integer> {
 
@@ -19,10 +24,12 @@ public class TankFiller extends AbstractFluidActionIterable<Integer> {
     FlowingFluid fluid;
     IFluidHandlerItem fluidHandlerItem;
     Long2ObjectLinkedOpenHashMap<FluidState> states = new Long2ObjectLinkedOpenHashMap<>();
+    Map<BlockPos, BlockPos> backwardsFlowMap = new HashMap<>();
 
     /**
      * fills task as much as possible from connected fluids starting at target pos<br/>
      * tryExecuteWithResult returns whether fully filling succeeded and the new tank level
+     *
      * @param world
      * @param fluid
      * @param fluidHandlerItem
@@ -31,8 +38,8 @@ public class TankFiller extends AbstractFluidActionIterable<Integer> {
         this.world = world;
         this.fluid = fluid;
         this.fluidHandlerItem = fluidHandlerItem;
-        maxTankLevels = this.fluidHandlerItem.getTankCapacity(0) / FFluidStatic.MILLIBUCKETS_PER_LEVEL;
-        int currentLevel = this.fluidHandlerItem.getFluidInTank(0).getAmount() / FFluidStatic.MILLIBUCKETS_PER_LEVEL;
+        maxTankLevels = this.fluidHandlerItem.getTankCapacity(0) / Constants.MILLIBUCKETS_PER_LEVEL;
+        int currentLevel = this.fluidHandlerItem.getFluidInTank(0).getAmount() / Constants.MILLIBUCKETS_PER_LEVEL;
         // TODO config max levels until full?
         levelsUntilFull = maxTankLevels - currentLevel;
     }
@@ -53,14 +60,31 @@ public class TankFiller extends AbstractFluidActionIterable<Integer> {
     }
 
     @Override
+    protected void cacheFlow(BlockPos fromPos, BlockPos toPos) {
+        // cache flow backwards
+        backwardsFlowMap.put(toPos.immutable(), fromPos.immutable());
+    }
+
+    @Override
     protected boolean isValidPos(BlockPos pos) {
         FluidState fluidState = world.getFluidState(pos);
-        return fluid.isSame(fluidState.getType()); // implies not empty and not zero levels
+        boolean correctFluid = fluid.isSame(fluidState.getType()); // implies not empty and not zero levels
+        if (correctFluid) {
+            if (backwardsFlowMap.containsKey(pos)) { // if has previous pos => check if previous pos had fluid
+                BlockPos previousPos = backwardsFlowMap.get(pos);
+                boolean disconnectedFluid = world.getFluidState(previousPos).isEmpty(); // only slurp when fluids connected to start pos
+                return !disconnectedFluid;
+            } else { // first pos has no previous => ok
+                return true;
+            }
+        } else { // wrong fluid
+            return false;
+        }
     }
 
     @Override
     protected void process(BlockPos pos) {
-        Tuple2<Integer, FluidState> takenLvlsAndNewFS = FFluidStatic.takeLevelsUpTo(world.getFluidState(pos), levelsUntilFull);
+        Tuple2<Integer, FluidState> takenLvlsAndNewFS = FFluidStatic.takeLevelsUpTo(world.getFluidState(pos), fluid, levelsUntilFull);
         Integer takenLevels = takenLvlsAndNewFS.first;
         FluidState newFluidState = takenLvlsAndNewFS.second;
         if (takenLevels > 0) { // levels were actually taken

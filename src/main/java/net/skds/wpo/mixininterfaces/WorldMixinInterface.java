@@ -14,6 +14,8 @@ public interface WorldMixinInterface extends IWorldWriterMixinInterface {
 
     boolean setBlockNoFluid(BlockPos pPos, BlockState pNewState, int pFlags);
 
+    boolean setBlockNoFluid(BlockPos pPos, BlockState pNewState, int pFlags, int recursion);
+
     /**
      * sends fluid state update to clients
      *

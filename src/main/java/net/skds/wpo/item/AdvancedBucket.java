@@ -26,7 +26,6 @@ import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.templates.FluidHandlerItemStack;
 import net.skds.wpo.client.models.ISTER;
-import net.skds.wpo.fluidphysics.FFluidStatic;
 import net.skds.wpo.util.Constants;
 
 public class AdvancedBucket extends BucketItem implements ICapabilityProvider {
@@ -89,7 +88,7 @@ public class AdvancedBucket extends BucketItem implements ICapabilityProvider {
 
 		private void updateDamage(ItemStack stack) {
 			FluidHandler fst = new FluidHandler(stack);
-			int containedLevels = fst.getFluid().getAmount() / FFluidStatic.MILLIBUCKETS_PER_LEVEL;
+			int containedLevels = fst.getFluid().getAmount() / Constants.MILLIBUCKETS_PER_LEVEL;
 			stack.setDamageValue(Constants.MAX_FLUID_LEVEL - containedLevels);
 		}
 	}

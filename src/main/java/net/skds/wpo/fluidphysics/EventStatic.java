@@ -37,6 +37,7 @@ import net.skds.wpo.fluidphysics.actioniterables.TankFiller;
 import net.skds.wpo.fluidphysics.actioniterables.TankFlusher;
 import net.skds.wpo.item.AdvancedBucket;
 import net.skds.wpo.mixininterfaces.WorldMixinInterface;
+import net.skds.wpo.util.Constants;
 import net.skds.wpo.util.tuples.Tuple2;
 
 import static net.skds.wpo.registry.Items.ADVANCED_BUCKET;
@@ -83,7 +84,7 @@ public class EventStatic {
                         // TODO handle forge containers
                         int newLevel = successAndReturn.second;
                         AdvancedBucket.FluidHandler advBucketHandler = new AdvancedBucket.FluidHandler(new ItemStack(ADVANCED_BUCKET.get()));
-                        FluidStack fluidStack = new FluidStack(fluidAtPos, newLevel * FFluidStatic.MILLIBUCKETS_PER_LEVEL);
+                        FluidStack fluidStack = new FluidStack(fluidAtPos, newLevel * Constants.MILLIBUCKETS_PER_LEVEL);
                         advBucketHandler.fill(fluidStack, IFluidHandler.FluidAction.EXECUTE);
                         event.setFilledBucket(advBucketHandler.getContainer());
                     }
@@ -130,21 +131,21 @@ public class EventStatic {
                         // TODO handle forge containers
                         int newLevel = successAndReturn.second;
                         AdvancedBucket.FluidHandler advBucketHandler = new AdvancedBucket.FluidHandler(new ItemStack(ADVANCED_BUCKET.get()));
-                        FluidStack fluidStack = new FluidStack(fluidAtPos, newLevel * FFluidStatic.MILLIBUCKETS_PER_LEVEL);
+                        FluidStack fluidStack = new FluidStack(fluidAtPos, newLevel * Constants.MILLIBUCKETS_PER_LEVEL);
                         advBucketHandler.fill(fluidStack, IFluidHandler.FluidAction.EXECUTE);
                         event.setFilledBucket(advBucketHandler.getContainer());
                     }
-                    // skip vanilla code: forge reduces bucket stack and places filled bucket from event in inventory
-                    event.setResult(Event.Result.ALLOW);
-                    // award stats & play sound (not done by forge; see BucketItem and ForgeEventFactory)
-                    Item item = bucketHandler.getContainer().getItem();
-                    player.awardStat(Stats.ITEM_USED.get(item));
-                    SoundEvent soundevent = fluidAtPos.getAttributes().getEmptySound();
-                    if (soundevent == null) {
-                        soundevent = fluidAtPos.is(FluidTags.LAVA) ? SoundEvents.BUCKET_EMPTY_LAVA : SoundEvents.BUCKET_EMPTY;
-                    }
-                    player.playSound(soundevent, 1.0F, 1.0F);
                 }
+                // skip vanilla code: forge reduces bucket stack and places filled bucket from event in inventory
+                event.setResult(Event.Result.ALLOW);
+                // award stats & play sound (not done by forge; see BucketItem and ForgeEventFactory)
+                Item item = bucketHandler.getContainer().getItem();
+                player.awardStat(Stats.ITEM_USED.get(item));
+                SoundEvent soundevent = fluidAtPos.getAttributes().getEmptySound();
+                if (soundevent == null) {
+                    soundevent = fluidAtPos.is(FluidTags.LAVA) ? SoundEvents.BUCKET_EMPTY_LAVA : SoundEvents.BUCKET_EMPTY;
+                }
+                player.playSound(soundevent, 1.0F, 1.0F);
             }
             Item bucketItem = bucketItemStack.getItem();
             if (bucketItem instanceof FishBucketItem) {

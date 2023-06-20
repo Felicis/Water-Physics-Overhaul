@@ -104,18 +104,18 @@ public class FluidGateTileEntity extends BasicTankEntity
 				return;
 			}
 
-			if (FFluidStatic.canFlow(level, worldPosition, flowPos, Blocks.AIR.defaultBlockState(), flowState, tF)) {
+			if (FFluidStatic.canFlow(level, worldPosition, dir)) {
 				int dl = am / 125;
 				int lvl = flowFs.getAmount();
 				dl = 8 - lvl >= dl ? dl : 8 - lvl;
 
 				if (dl > 0) {
 					lvl += dl;
-					BlockState bs2 = FFluidStatic.forceApplyFluid(flowState, lvl, (FlowingFluid) tF);
+//					BlockState bs2 = FFluidStatic.forceApplyFluid(flowState, lvl, (FlowingFluid) tF);
 					FluidStack nfst = new FluidStack(tF, am - (dl * 125));
 					tank.setFluid(nfst);
 
-					level.setBlockAndUpdate(flowPos, bs2);
+//					level.setBlockAndUpdate(flowPos, bs2);
 					atm = true;
 					break;
 				}

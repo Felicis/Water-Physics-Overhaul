@@ -12,7 +12,6 @@ import net.skds.wpo.util.tuples.Tuple2;
 public class BottleFiller extends AbstractFluidActionIterable<Void> {
 
     int bottleLevels = 3;
-    int sl = 0;
     boolean complete = false;
     World world;
     FlowingFluid fluid;
@@ -46,7 +45,7 @@ public class BottleFiller extends AbstractFluidActionIterable<Void> {
 
     @Override
     protected void process(BlockPos pos) {
-        Tuple2<Integer, FluidState> takenLvlsAndNewFS = FFluidStatic.takeLevelsUpTo(world.getFluidState(pos), bottleLevels);
+        Tuple2<Integer, FluidState> takenLvlsAndNewFS = FFluidStatic.takeLevelsUpTo(world.getFluidState(pos), fluid, bottleLevels);
         Integer takenLevels = takenLvlsAndNewFS.first;
         FluidState newFluidState = takenLvlsAndNewFS.second;
         if (takenLevels > 0) { // levels were actually taken

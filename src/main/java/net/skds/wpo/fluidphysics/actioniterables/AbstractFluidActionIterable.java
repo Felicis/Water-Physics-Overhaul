@@ -19,6 +19,10 @@ public abstract class AbstractFluidActionIterable<T> {
 
     abstract World getWorld();
 
+    protected void cacheFlow(BlockPos fromPos, BlockPos toPos) {
+        // nop
+    }
+
     protected void addInitial(Set<BlockPos> set, BlockPos p0) {
         set.add(p0);
     }
@@ -79,57 +83,62 @@ public abstract class AbstractFluidActionIterable<T> {
     }
 
     public Tuple2<Boolean, T> tryExecuteWithResult(BlockPos startPos, int flags, int recursion) {
-        World world = this.getWorld();
-        // all visited pos's
-        Set<BlockPos> allVisited = new HashSet<>();
-        // pos's for current and next range sweep
-        Set<BlockPos> setCurrent = new HashSet<>();
-        Set<BlockPos> setNext = new HashSet<>();
-        // add initial pos's to current
-        this.addInitial(setCurrent, startPos);
-
-        // do range sweeps (breadth first)
-        for (int i = this.getMaxRange(); i <= 0; i--) {
-            if (setCurrent.isEmpty()) { // if empty, we covered entire valid volume => stop
-                break;
-            }
-            for (BlockPos posCurrent : setCurrent) {
-                allVisited.add(posCurrent);
-                if (this.isValidPos(posCurrent)) {
-                    this.process(posCurrent); // process position
-                    if (this.isComplete()) { // check if processed enough pos's
-                        break;
-                    }
-                }
-                if (i == 0) {
-                    break; // max range reached: do not generate new pos's
-                }
-                // first down, then random sides, then up
-                List<Direction> dirList = new ArrayList<>(6);
-                dirList.add(Direction.DOWN);
-                Direction[] randomSides = FFluidStatic.getRandomizedDirections(world.getRandom(), false);
-                dirList.addAll(Arrays.asList(randomSides));
-                dirList.add(Direction.UP);
-                for (Direction randDir : dirList) {
-                    if (FFluidStatic.canFlow(world, posCurrent, randDir)) { // if can flow through blocks in that direction
-                        BlockPos posNew = posCurrent.relative(randDir);
-                        if (!allVisited.contains(posNew)) { // do not visit twice
-                            setNext.add(posNew); // visit next
-                        }
-                    }
-                }
-            }
-            // continue with next set of pos's
-            setCurrent.addAll(setNext);
-            setNext.clear();
-        }
-        // after checking all in range
-        if (this.isComplete()) {
+        if (tryExecuteWithResultImpl(startPos, flags, recursion)) {
             T result = this.finishSuccess(flags, recursion);
             return new Tuple2<>(true, result);
         } else {
             T result = this.finishFail(flags, recursion);
             return new Tuple2<>(false, result);
         }
+    }
+    public boolean tryExecuteWithResultImpl(BlockPos startPos, int flags, int recursion) {
+        // check if execute not needed
+        if (this.isComplete()) {
+            return true;
+        }
+
+        World world = this.getWorld();
+        // pos's for current and next range sweep
+        Set<BlockPos> setCurrent = new HashSet<>();
+        Set<BlockPos> setNext = new HashSet<>();
+        // add initial pos's to current (if valid)
+        this.addInitial(setCurrent, startPos);
+        setCurrent.removeIf(pos -> !this.isValidPos(pos)); // remove invalid pos
+        // all visited pos's (visited means pos was reached and checked for validity)
+        Set<BlockPos> allVisited = new HashSet<>(setCurrent);
+
+        // do range sweeps (breadth first)
+        for (int range = 0; range <= this.getMaxRange(); range++) { // start at range 0 (initial pos's)
+            if (setCurrent.isEmpty()) { // if empty, we covered entire valid volume & not found
+                return false;
+            }
+            for (BlockPos posCurrent : setCurrent) {
+                this.process(posCurrent); // process position
+                if (this.isComplete()) { // check if processed enough pos's
+                    return true;
+                }
+                if (range < this.getMaxRange()) { // if not max range reached  => generate new pos's
+                    // first down, then random sides, then up // TODO for taking maybe up, sides, down?
+                    for (Direction randDir : FFluidStatic.getDirsDownRandomHorizontalUp(world.getRandom())) {
+                        if (FFluidStatic.canFlow(world, posCurrent, randDir)) { // if can flow through blocks in that direction
+                            BlockPos posNew = posCurrent.relative(randDir);
+                            if (!allVisited.contains(posNew)) { // do not visit twice
+                                allVisited.add(posCurrent);
+                                cacheFlow(posCurrent, posNew); // needs to be before isValidPos
+                                if (this.isValidPos(posCurrent)) { // only consider valid
+                                    setNext.add(posNew); // set to visit next
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            // continue with next set of pos's
+            setCurrent.clear();
+            setCurrent.addAll(setNext);
+            setNext.clear();
+        }
+        // not found
+        return false;
     }
 }

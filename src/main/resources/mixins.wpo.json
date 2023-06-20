@@ -59,6 +59,7 @@
     "world.ChunkPrimerMixin",
     "world.ChunkPrimerWrapperMixin",
     "world.ChunkSectionMixin",
+    "world.ChunkSerializerMixin",
     "world.DebugChunkGeneratorMixin",
     "world.EmptyChunkMixin",
     "world.FlatChunkGeneratorMixin",

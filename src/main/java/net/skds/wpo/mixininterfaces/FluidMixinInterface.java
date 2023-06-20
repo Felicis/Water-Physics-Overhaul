@@ -40,6 +40,4 @@ public interface FluidMixinInterface {
     }
 
     FluidState updateShape(FluidState pState, Direction pFacing, FluidState pFacingState, IWorld pLevel, BlockPos pCurrentPos, BlockPos pFacingPos);
-
-    void updateIndirectNeighbourShapes(FluidState pState, IWorld pLevel, BlockPos pPos, int pFlags, int pRecursionLeft);
 }

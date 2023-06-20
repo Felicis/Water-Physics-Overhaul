@@ -2,6 +2,7 @@ package net.skds.wpo.mixin.block.withfluidphysics.vanillawaterloggable;
 
 import net.minecraft.block.*;
 import net.minecraft.fluid.FluidState;
+import net.skds.wpo.WPO;
 import net.skds.wpo.fluidphysics.FFluidStatic;
 import net.skds.wpo.util.marker.WPOFluidloggableMarker;
 import org.spongepowered.asm.mixin.Mixin;
@@ -31,11 +32,12 @@ public class VanillaWaterloggableBlockMixin implements IWaterLoggable, WPOFluidl
     /************+ MARKER MIXIN: do not remove this mixing even if empty ****************/
 
 
-//    /**
-//     * RoadBlock Injection to catch FluidState creation
-//     */
-//    @Inject(method = "getFluidState", at = @At(value = "HEAD"), cancellable = true)
-//    public void getFluidStateM(BlockState state, CallbackInfoReturnable<FluidState> cir) {
-//        cir.setReturnValue(FFluidStatic.getFluidState(state)); // TODO: (optional since only called by AbstractBlockState.~) -> use world.getFluidState(Pos)
-//    }
+    /**
+     * RoadBlock Injection to catch FluidState creation
+     */
+    @Inject(method = "getFluidState", at = @At(value = "HEAD"), cancellable = true)
+    public void getFluidStateM(BlockState state, CallbackInfoReturnable<FluidState> cir) {
+        WPO.LOGGER.error("<IWaterLoggable>.getFluidState() was called!!!!", new Throwable());
+//		throw new Exception("<IWaterLoggable>.getFluidState() was called!!!!");
+    }
 }

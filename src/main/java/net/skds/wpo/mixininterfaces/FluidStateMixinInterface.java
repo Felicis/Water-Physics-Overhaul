@@ -18,8 +18,6 @@ public interface FluidStateMixinInterface {
 
     void updateNeighbourShapes(IWorld pLevel, BlockPos pPos, int pFlag, int pRecursionLeft);
 
-    void updateIndirectNeighbourShapes(IWorld pLevel, BlockPos pPos, int pFlag, int pRecursionLeft);
-
     FluidState updateShape(Direction pDirection, FluidState pQueried, IWorld pLevel, BlockPos pCurrentPos, BlockPos pOffsetPos);
 
     boolean skipRendering(FluidState pAdjacentState, Direction pSide);

@@ -1,40 +1,82 @@
 package net.skds.wpo.fluidphysics;
 
-import net.minecraft.block.*;
-import net.minecraft.fluid.*;
+import net.minecraft.block.BlockState;
+import net.minecraft.block.Blocks;
+import net.minecraft.block.FlowingFluidBlock;
+import net.minecraft.block.SlabBlock;
+import net.minecraft.block.material.Material;
+import net.minecraft.fluid.FlowingFluid;
+import net.minecraft.fluid.Fluid;
+import net.minecraft.fluid.FluidState;
+import net.minecraft.fluid.Fluids;
 import net.minecraft.state.properties.SlabType;
-import net.minecraft.util.*;
-import net.minecraft.util.math.*;
+import net.minecraft.util.Direction;
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.shapes.VoxelShape;
 import net.minecraft.util.math.shapes.VoxelShapes;
 import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.util.math.vector.Vector3i;
 import net.minecraft.world.IBlockReader;
+import net.minecraft.world.IWorld;
 import net.minecraft.world.World;
-import net.minecraft.world.server.ServerWorld;
-import net.skds.core.api.IBlockExtended;
 import net.skds.wpo.WPO;
 import net.skds.wpo.WPOConfig;
-import net.skds.wpo.fluidphysics.actioniterables.*;
+import net.skds.wpo.fluidphysics.actioniterables.FluidDisplacer;
+import net.skds.wpo.fluidphysics.actioniterables.LedgeFinder;
 import net.skds.wpo.mixininterfaces.WorldMixinInterface;
 import net.skds.wpo.util.Constants;
-import net.skds.wpo.util.tuples.Tuple2;
 import net.skds.wpo.util.marker.WPOFluidMarker;
 import net.skds.wpo.util.marker.WPOFluidloggableMarker;
-import net.skds.wpo.util.pars.FluidPars;
+import net.skds.wpo.util.tuples.Tuple2;
 import net.skds.wpo.util.tuples.Tuple3;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Random;
+import java.util.stream.Collectors;
 
 import static net.minecraft.state.properties.BlockStateProperties.WATERLOGGED;
-import static net.skds.wpo.registry.BlockStateProps.*;
 
 public class FFluidStatic {
 
-	public final static int MILLIBUCKETS_PER_LEVEL = 1000 / Constants.MAX_FLUID_LEVEL;
-
 
 	// ================ UTIL ================== //
+
+	/**
+	 * get list of down, randomized horizontal directions, up
+	 * @param r
+	 * @return
+	 */
+	public static List<Direction> getDirsDownRandomHorizontalUp(Random r) {
+		List<Direction> randomDirs = getDirsRandomHorizontal(r);
+		randomDirs.add(0, Direction.DOWN);
+		randomDirs.add(Direction.UP);
+		return randomDirs;
+	}
+
+	/**
+	 * get list of up, randomized horizontal directions, down
+	 * @param r
+	 * @return
+	 */
+	public static List<Direction> getDirsUpRandomHorizontalDown(Random r) {
+		List<Direction> randomDirs = getDirsRandomHorizontal(r);
+		randomDirs.add(0, Direction.UP);
+		randomDirs.add(Direction.DOWN);
+		return randomDirs;
+	}
+
+	/**
+	 * get list of horizontal randomized directions
+	 * @param r
+	 * @return
+	 */
+	public static List<Direction> getDirsRandomHorizontal(Random r) {
+		List<Direction> directionList = Direction.Plane.HORIZONTAL.stream().collect(Collectors.toList());
+		Collections.shuffle(directionList);
+		return directionList;
+	}
 
 	public static Direction[] getRandomizedDirections(Random r, boolean addVertical) {
 
@@ -136,8 +178,14 @@ public class FFluidStatic {
 				return false; // double slabs cannot hold fluid
 			}
 			return true;
-		} else { // can not hold fluid
-			return false;
+		} else { // can not hold fluid: check if can be destroyed (?)
+			// UGPRADE check FlowingFluid.canHoldFluid => if can be destroyed by fluid?
+			Material material = state.getMaterial();
+			if (material != Material.PORTAL && material != Material.STRUCTURAL_AIR && material != Material.WATER_PLANT && material != Material.REPLACEABLE_WATER_PLANT) {
+				return !material.blocksMotion();
+			} else {
+				return false;
+			}
 		}
 	}
 
@@ -160,28 +208,28 @@ public class FFluidStatic {
 		return state.setValue(WATERLOGGED, fluidlogged);
 	}
 
-	/**
-	 * getter for WPO_LEVEL property (only access through this!)
-	 * @param state
-	 * @return
-	 */
-	public static int getFluidBlockLevel(BlockState state){
-		return state.getValue();
-	}
+//	/**
+//	 * getter for WPO_LEVEL property (only access through this!)
+//	 * @param state
+//	 * @return
+//	 */
+//	public static int getFluidBlockLevel(BlockState state){
+//		return state.getValue();
+//	}
 
-	/**
-	 * setter for WPO_LEVEL property (only access through this!)
-	 * @param state
-	 * @param level
-	 * @return
-	 */
-	public static BlockState setFluidLevel(BlockState state, int level){ // TODO update FluidState (only update BlockState if FlowingFluidBlock - legacyLevel)
-		if (level < 0 || level > Constants.MAX_FLUID_LEVEL) {
-			throw new RuntimeException("Incorrect fluid level!!!");
-		} else {
-			return state.setValue(WPO_LEVEL, level);
-		}
-	}
+//	/**
+//	 * setter for WPO_LEVEL property (only access through this!)
+//	 * @param state
+//	 * @param level
+//	 * @return
+//	 */
+//	public static BlockState setFluidLevel(BlockState state, int level){ // TODO update FluidState (only update BlockState if FlowingFluidBlock - legacyLevel)
+//		if (level < 0 || level > Constants.MAX_FLUID_LEVEL) {
+//			throw new RuntimeException("Incorrect fluid level!!!");
+//		} else {
+//			return state.setValue(WPO_LEVEL, level);
+//		}
+//	}
 
 //	/**
 //	 * getter for WPO_FLUID property (only access through this!)
@@ -202,30 +250,6 @@ public class FFluidStatic {
 //		return state.setValue(WPO_FLUID, fluid2Property(fluid));
 //	}
 
-	/**
-	 *
-	 * @param state
-	 * @return
-	 */
-	public static FluidState getFluidState(BlockState state){ // TODO remove or integrate into ~.getDefaultFluidStat()
-		if (isFluidBlock(state)){ // guarantees not empty fluid
-			FlowingFluid flowingFluid = (FlowingFluid) getFluid(state); // safe cast, because empty fluid block does not exist
-			int fluidLevel = getFluidLevel(state);
-			return getSourceOrFlowing(flowingFluid, fluidLevel);
-		} else if (isFluidloggableBlock(state)){
-			Fluid fluid = getFluid(state);
-			if (isEmpty(fluid)){
-				return Fluids.EMPTY.defaultFluidState();
-			} else { // not empty
-				FlowingFluid flowingFluid = (FlowingFluid) fluid; // safe cast, because not empty
-				int fluidLevel = getFluidLevel(state);
-				return getSourceOrFlowing(flowingFluid, fluidLevel);
-			}
-		} else { // other blocks => vanilla behaviour
-			return state.getBlock().getFluidState(state); // see AbstractBlock.AbstractBlockState#getFluidState()
-		}
-	}
-
 	private static FluidState getSourceOrFlowing(FlowingFluid fluid, int fluidLevel){
 		if (fluidLevel == 8){ // source
 			return fluid.getSource(false);
@@ -234,10 +258,10 @@ public class FFluidStatic {
 		}
 	}
 
-	private static FluidState getSourceOrFlowingOrEmpty(FlowingFluid fluid, int fluidLevel){
-		if (fluidLevel == 8){ // source
+	public static FluidState getSourceOrFlowingOrEmpty(FlowingFluid fluid, int fluidLevel){
+		if (fluidLevel >= 8){ // source
 			return fluid.getSource(false);
-		} if (fluidLevel == 0){ // empty
+		} if (fluidLevel <= 0){ // empty
 			return Fluids.EMPTY.defaultFluidState();
 		} else { // flowing
 			return fluid.getFlowing(fluidLevel, false);
@@ -250,10 +274,10 @@ public class FFluidStatic {
 	 * @param maxLevelsToTake
 	 * @return
 	 */
-	public static Tuple2<Integer, FluidState> takeLevelsUpTo(FluidState fluidState, int maxLevelsToTake) {
+	public static Tuple2<Integer, FluidState> takeLevelsUpTo(FluidState fluidState, FlowingFluid fluidToPlace, int maxLevelsToTake) {
 		int actuallyTaken = Math.min(maxLevelsToTake, fluidState.getAmount());
 		int newFSLevel = fluidState.getAmount() - actuallyTaken;
-		FluidState modifiedFluidState = getSourceOrFlowingOrEmpty((FlowingFluid) fluidState.getType(), newFSLevel);
+		FluidState modifiedFluidState = getSourceOrFlowingOrEmpty(fluidToPlace, newFSLevel);
 		return new Tuple2<>(actuallyTaken, modifiedFluidState);
 	}
 
@@ -263,11 +287,14 @@ public class FFluidStatic {
 	 * @param maxLevelsToPlace
 	 * @return 1st: whether levels were placed, 2nd: the # of placed levels, 3rd: the modified FS with levels placed
 	 */
-	public static Tuple3<Boolean, Integer, FluidState> placeLevelsUpTo(FluidState fluidState, int maxLevelsToPlace) {
+	public static Tuple3<Boolean, Integer, FluidState> placeLevelsUpTo(FluidState fluidState, FlowingFluid fluidToPlace, int maxLevelsToPlace) {
+		if (!fluidState.isEmpty() && !fluidState.getType().isSame(fluidToPlace)) { // wrong fluid => place nothing
+			return new Tuple3<>(false, 0, fluidState);
+		}
 		int freeSpaceInFluidState = Constants.MAX_FLUID_LEVEL - fluidState.getAmount();
 		int actuallyPlaced = Math.min(maxLevelsToPlace, freeSpaceInFluidState);
 		int newFSLevel = fluidState.getAmount() + actuallyPlaced;
-		FluidState modifiedFluidState = getSourceOrFlowingOrEmpty((FlowingFluid) fluidState.getType(), newFSLevel);
+		FluidState modifiedFluidState = getSourceOrFlowingOrEmpty(fluidToPlace, newFSLevel);
 		return new Tuple3<>(fluidState != modifiedFluidState, actuallyPlaced, modifiedFluidState);
 	}
 
@@ -329,164 +356,205 @@ public class FFluidStatic {
 			boolean setBlockSuccess = ((WorldMixinInterface) world).setBlockNoFluid(pos, newBlockState, flags);
 			boolean setFluidSuccess = ((WorldMixinInterface) world).setFluid(pos, fluidState, flags);
 			return setBlockSuccess && setFluidSuccess;
+		} else if (false) {
+			// TODO if block should be destroyed on fluid contact:
+			//  - World.destroyBlock
+			//  - FluidUtil.destroyBlockOnFluidPlacement
+			//  - BucketItem.emptyBucket
+			return false;
 		} else if (!displaceFluid) { // can not hold fluid and dont displace => destroy fluid
 			boolean setBlockSuccess = ((WorldMixinInterface) world).setBlockNoFluid(pos, blockState, flags);
 			boolean setFluidSuccess = ((WorldMixinInterface) world).setFluid(pos, Fluids.EMPTY.defaultFluidState(), flags);
 			return setBlockSuccess && setFluidSuccess;
 		} else if (recursion > 0) { // can not hold fluid => try displacing (prevent infinite recursion)
+			boolean setBlockSuccess = ((WorldMixinInterface) world).setBlockNoFluid(pos, blockState, flags);
 			FluidDisplacer displacer = new FluidDisplacer(world, fluidState);
 			// flags = 3 is okay (block and client update + rerender + neighbor changes)
-			return displacer.tryExecute(pos, 3, recursion - 1); // prevent infinite recursion
+			boolean setFluidSuccess = displacer.tryExecute(pos, 3, recursion - 1); // prevent infinite recursion
+			return setBlockSuccess && setFluidSuccess;
 		} else { // recursion limit reached: error message with stack trace (but no exception)
 			WPO.LOGGER.error("FFluidStatic.setBlockAndFluid and FluidDisplacer: reached recursion limit!", new Throwable());
 			return false;
 		}
 	}
 
-	public static void scheduleFluidTick(World world, BlockPos pos, FluidState fluidState) {
-		if (!fluidState.isEmpty()) { // only schedule tick if contains fluid
-			FlowingFluid flowingFluid = (FlowingFluid) fluidState.getType(); // safe cast, bc if not empty must be flowing
-			world.getLiquidTicks().scheduleTick(pos, flowingFluid, flowingFluid.getTickDelay(world));
-		}
-	}
-
-	/**
-	 * returns whether state contains fluid (which requires special fluid handling) or is empty
-	 * @param state
-	 * @return
-	 */
-	public static boolean containsFluid(BlockState state){ // TODO level, pos -> FluidState
-		if (isAirBlock(state)){
-			return false; // by definition does not contain fluid
-		} else if (isFluidBlock(state)){
-			return true; // by definition contains fluid
-		} else if (isFluidloggableBlock(state)){ // fluidloggable block can contain fluid or be empty
-			return !state.getFluidState().isEmpty(); // enforced by getFluidState Mixins
-		} else { // no fluid
-			return false;
-		}
-	}
-
-	/**
-	 * removes fluid from any blockstate (can hold fluid OR not) and returns it
-	 * @param state
-	 * @return
-	 */
-	public static BlockState removeFluid(BlockState state){  // TODO level, pos, FluidState?
-		if (isFluidBlock(state)){
-			state = setFluid(state, Fluids.EMPTY);
-			state = setFluidLevel(state, 0);
-			return state;
-		} else if (isFluidloggableBlock(state)){
-			state = setFluid(state, Fluids.EMPTY);
-			state = setFluidLevel(state, 0);
-			state = setFluidlogged(state, false);
-			return state;
+	public static boolean setBlockAlsoFluid(World world, BlockPos pos, BlockState blockState, boolean displaceFluid) {
+		FluidState fluidState = world.getFluidState(pos);
+		if (fluidState.isEmpty()) {
+			return ((WorldMixinInterface) world).setBlockNoFluid(pos, blockState); // no recursion
 		} else {
-			return state;
+			return setBlockAndFluid(world, pos, blockState, fluidState, displaceFluid);
 		}
 	}
 
-	public static void ejectFluidOrDestroy(World world, BlockPos pos) {
-		boolean success = FFluidStatic.ejectFluid(world, pos);
-		if (!success) { // ejecting failed => destroy fluid
-			((WorldMixinInterface) world).setFluidAndUpdate(pos, Fluids.EMPTY.defaultFluidState());
+	public static boolean setBlockAlsoFluid(World world, BlockPos pos, BlockState blockState, boolean displaceFluid, int flags) {
+		FluidState fluidState = world.getFluidState(pos);
+		if (fluidState.isEmpty()) {
+			return ((WorldMixinInterface) world).setBlockNoFluid(pos, blockState, flags); // no recursion
+		} else {
+			return setBlockAndFluid(world, pos, blockState, fluidState, displaceFluid, flags);
 		}
 	}
 
-	/**
-	 * eject fluid contained in fluidstate at pos
-	 * @param world
-	 * @param pos
-	 * @return whether ejecting succeeded or not
-	 */
-	public static boolean ejectFluid(World world, BlockPos pos) {
-		FluidState oldFluidState = world.getFluidState(pos);
-		if (oldFluidState.isEmpty()) { // if empty
-			return true; // succeeded at ejecting fluid :)
-		} else { // if contains fluid
-			// displace fluid contained in oldFluidState
-			FluidDisplacer displacer = new FluidDisplacer(world, oldFluidState);
-			return displacer.tryExecute(pos); // return success or not
+	public static boolean setBlockAlsoFluid(World world, BlockPos pos, BlockState blockState, boolean displaceFluid, int flags, int recursion) {
+		FluidState fluidState = world.getFluidState(pos);
+		if (fluidState.isEmpty()) {
+			return ((WorldMixinInterface) world).setBlockNoFluid(pos, blockState, flags, recursion); // no recursion
+		} else {
+			return setBlockAndFluid(world, pos, blockState, fluidState, displaceFluid, recursion);
 		}
 	}
 
-	/**
-	 * updates newState given oldState fluid:
-	 * if newState cant hold fluid, ejects, otherwise copies fluid from oldState to newState<br/>
-	 * (creates new fluid block when copying to air)
-	 * @param world
-	 * @param pos
-	 * @param oldState
-	 * @param newState
-	 * @return updated newState
-	 */
-	public static BlockState copyFluidOrEject(ServerWorld world, BlockPos pos, BlockState oldState, BlockState newState){ // TODO level, pos, FluidState?, setFluid?
-		if (!containsFluid(oldState)) { // if no fluid in oldState
-			return newState; // nothing to copy TODO: maybe we need to remove fluid
-		} else if (isAirBlock(newState)){ // if new block is air, create liquid block from old fluid
-			FlowingFluid flowingFluid = (FlowingFluid) getFluid(oldState); // safe cast, because oldState contains fluid
-			int fluidLevel = getFluidLevel(oldState);
-			FluidState fluidState = getSourceOrFlowing(flowingFluid, fluidLevel);
-			return fluidState.createLegacyBlock();
-		} else if (canHoldFluid(newState)){ // if can hold => apply
-			newState = setFluid(newState, getFluid(oldState));
-			newState = setFluidLevel(newState, getFluidLevel(oldState));
-			newState = setFluidlogged(newState, isFluidlogged(oldState));
-			return newState;
-		} else { // if newState can not hold => eject
-			return ejectFluid(world, pos, oldState, newState);
-		}
+	public static boolean setFluidAlsoBlock(World world, BlockPos pos, FluidState fluidState) {
+		BlockState blockState = world.getBlockState(pos);
+		return setBlockAndFluid(world, pos, blockState, fluidState, false); // only changing fluid can not displace
 	}
 
-	public static BlockState copyFluidOrEject(ServerWorld world, BlockPos pos, BlockState newState){ // TODO level, pos, FluidState?, setFluid?
-		BlockState oldState = world.getBlockState(pos);
-		return copyFluidOrEject(world, pos, oldState, newState);
+	public static boolean setFluidAlsoBlock(World world, BlockPos pos, FluidState fluidState, int flags) {
+		BlockState blockState = world.getBlockState(pos);
+		return setBlockAndFluid(world, pos, blockState, fluidState, false, flags); // only changing fluid can not displace
 	}
 
-	/**
-	 * Applies newlevel and fluid to state (waterlogs new block or creates water block).<br/>
-	 * Does not check whether state can hold fluid!
-	 * <br/><br/>
-	 * Safe alternatives:
-	 * - {@link FFluidStatic#copyFluidOrEject(ServerWorld, BlockPos, BlockState, BlockState)}
-	 * Assumes that
-	 * @param newState
-	 * @param newLevel
-	 * @param newFlowingFluid
-	 * @return
-	 */
-	public static BlockState forceApplyFluid(BlockState newState, int newLevel, FlowingFluid newFlowingFluid) { // TODO level, pos, FluidState?
-		// from FlowingFluid.spreadTo(IWorld, BlockPos, BlockState, ~, FluidState) => force places fluid and destroys if needed
-//			if (pBlockState.getBlock() instanceof ILiquidContainer) { // if waterloggable
-//				((ILiquidContainer)pBlockState.getBlock()).placeLiquid(pLevel, pPos, pBlockState, pFluidState); // place waterlogged
-//			} else {
-//				if (!pBlockState.isAir()) {
-//					this.beforeDestroyingBlock(pLevel, pPos, pBlockState); // if not air, destroy (water/forge fluid => drop, lava => fizz)
-//				}
-//				pLevel.setBlock(pPos, pFluidState.createLegacyBlock(), 3);
+	public static boolean setFluidAlsoBlock(World world, BlockPos pos, FluidState fluidState, int flags, int recursion) {
+		BlockState blockState = world.getBlockState(pos);
+		return setBlockAndFluid(world, pos, blockState, fluidState, false, flags, recursion); // only changing fluid can not displace
+	}
+
+	public static boolean removeFluidAlsoBlock(World world, BlockPos pos) {
+		BlockState blockState = world.getBlockState(pos);
+		return setBlockAndFluid(world, pos, blockState, Fluids.EMPTY.defaultFluidState(), false);
+	}
+
+//	/**
+//	 * returns whether state contains fluid (which requires special fluid handling) or is empty
+//	 * @param state
+//	 * @return
+//	 */
+//	public static boolean containsFluid(BlockState state){ // TODO level, pos -> FluidState
+//		if (isAirBlock(state)){
+//			return false; // by definition does not contain fluid
+//		} else if (isFluidBlock(state)){
+//			return true; // by definition contains fluid
+//		} else if (isFluidloggableBlock(state)){ // fluidloggable block can contain fluid or be empty
+//			return !state.getFluidState().isEmpty(); // enforced by getFluidState Mixins
+//		} else { // no fluid
+//			return false;
+//		}
+//	}
+
+//	/**
+//	 * removes fluid from any blockstate (can hold fluid OR not) and returns it
+//	 * @param state
+//	 * @return
+//	 */
+//	public static BlockState removeFluid(BlockState state){  // TODO level, pos, FluidState?
+//		if (isFluidBlock(state)){
+//			state = setFluid(state, Fluids.EMPTY);
+//			state = setFluidLevel(state, 0);
+//			return state;
+//		} else if (isFluidloggableBlock(state)){
+//			state = setFluid(state, Fluids.EMPTY);
+//			state = setFluidLevel(state, 0);
+//			state = setFluidlogged(state, false);
+//			return state;
+//		} else {
+//			return state;
+//		}
+//	}
+
+//	/**
+//	 * eject fluid contained in fluidstate at pos
+//	 * @param world
+//	 * @param pos
+//	 * @return whether ejecting succeeded or not
+//	 */
+//	public static boolean ejectFluid(World world, BlockPos pos) {
+//		FluidState oldFluidState = world.getFluidState(pos);
+//		if (oldFluidState.isEmpty()) { // if empty
+//			return true; // succeeded at ejecting fluid :)
+//		} else { // if contains fluid
+//			// displace fluid contained in oldFluidState
+//			FluidDisplacer displacer = new FluidDisplacer(world, oldFluidState);
+//			return displacer.tryExecute(pos); // return success or not
+//		}
+//	}
+
+//	/**
+//	 * updates newState given oldState fluid:
+//	 * if newState cant hold fluid, ejects, otherwise copies fluid from oldState to newState<br/>
+//	 * (creates new fluid block when copying to air)
+//	 * @param world
+//	 * @param pos
+//	 * @param oldState
+//	 * @param newState
+//	 * @return updated newState
+//	 */
+//	public static BlockState copyFluidOrEject(ServerWorld world, BlockPos pos, BlockState oldState, BlockState newState){ // TODO level, pos, FluidState?, setFluid?
+//		if (!containsFluid(oldState)) { // if no fluid in oldState
+//			return newState; // nothing to copy TODO: maybe we need to remove fluid
+//		} else if (isAirBlock(newState)){ // if new block is air, create liquid block from old fluid
+//			FlowingFluid flowingFluid = (FlowingFluid) getFluid(oldState); // safe cast, because oldState contains fluid
+//			int fluidLevel = getFluidLevel(oldState);
+//			FluidState fluidState = getSourceOrFlowing(flowingFluid, fluidLevel);
+//			return fluidState.createLegacyBlock();
+//		} else if (canHoldFluid(newState)){ // if can hold => apply
+//			newState = setFluid(newState, getFluid(oldState));
+//			newState = setFluidLevel(newState, getFluidLevel(oldState));
+//			newState = setFluidlogged(newState, isFluidlogged(oldState));
+//			return newState;
+//		} else { // if newState can not hold => eject
+//			return ejectFluid(world, pos, oldState, newState);
+//		}
+//	}
+
+//	public static BlockState copyFluidOrEject(ServerWorld world, BlockPos pos, BlockState newState){ // TODO level, pos, FluidState?, setFluid?
+//		BlockState oldState = world.getBlockState(pos);
+//		return copyFluidOrEject(world, pos, oldState, newState);
+//	}
+
+//	/**
+//	 * Applies newlevel and fluid to state (waterlogs new block or creates water block).<br/>
+//	 * Does not check whether state can hold fluid!
+//	 * <br/><br/>
+//	 * Safe alternatives:
+//	 * - {@link FFluidStatic#copyFluidOrEject(ServerWorld, BlockPos, BlockState, BlockState)}
+//	 * Assumes that
+//	 * @param newState
+//	 * @param newLevel
+//	 * @param newFlowingFluid
+//	 * @return
+//	 */
+//	public static BlockState forceApplyFluid(BlockState newState, int newLevel, FlowingFluid newFlowingFluid) { // TODO level, pos, FluidState?
+//		// from FlowingFluid.spreadTo(IWorld, BlockPos, BlockState, ~, FluidState) => force places fluid and destroys if needed
+////			if (pBlockState.getBlock() instanceof ILiquidContainer) { // if waterloggable
+////				((ILiquidContainer)pBlockState.getBlock()).placeLiquid(pLevel, pPos, pBlockState, pFluidState); // place waterlogged
+////			} else {
+////				if (!pBlockState.isAir()) {
+////					this.beforeDestroyingBlock(pLevel, pPos, pBlockState); // if not air, destroy (water/forge fluid => drop, lava => fizz)
+////				}
+////				pLevel.setBlock(pPos, pFluidState.createLegacyBlock(), 3);
+////			}
+//
+//		if (newLevel == 0) { // if no fluid (FlowingFluid is never empty)
+//			return removeFluid(newState); // TODO: remove just for safety (remove when all action iterators fixed)
+//		} else if (isAirBlock(newState)){ // if new block is air, create liquid block
+//			FluidState fluidState = getSourceOrFlowing(newFlowingFluid, newLevel);
+//			return fluidState.createLegacyBlock();
+//		} else if (canHoldFluid(newState)){ // if can hold (fluid block or fluidlogged) => apply
+////			newState = setFluid(newState, newFlowingFluid);
+//			newState = setFluidLevel(newState, newLevel);
+//			if (isFluidloggableBlock(newState)){ // if fluidloggable => set fluidlogged
+//				newState = setFluidlogged(newState, true);
 //			}
-
-		if (newLevel == 0) { // if no fluid (FlowingFluid is never empty)
-			return removeFluid(newState); // TODO: remove just for safety (remove when all action iterators fixed)
-		} else if (isAirBlock(newState)){ // if new block is air, create liquid block
-			FluidState fluidState = getSourceOrFlowing(newFlowingFluid, newLevel);
-			return fluidState.createLegacyBlock();
-		} else if (canHoldFluid(newState)){ // if can hold (fluid block or fluidlogged) => apply
-			newState = setFluid(newState, newFlowingFluid);
-			newState = setFluidLevel(newState, newLevel);
-			if (isFluidloggableBlock(newState)){ // if fluidloggable => set fluidlogged
-				newState = setFluidlogged(newState, true);
-			}
-			return newState;
-		} else {
-			WPO.LOGGER.error("FFluidStatic.forceApplyFluid: Tried to force-apply fluid=" +
-					newFlowingFluid.toString() + " level=" + newLevel +
-					" to BlockState=" + newState.toString() +
-					" which can not hold fluid and is not air!");
-			return newState;
-		}
-	}
+//			return newState;
+//		} else {
+//			WPO.LOGGER.error("FFluidStatic.forceApplyFluid: Tried to force-apply fluid=" +
+//					newFlowingFluid.toString() + " level=" + newLevel +
+//					" to BlockState=" + newState.toString() +
+//					" which can not hold fluid and is not air!");
+//			return newState;
+//		}
+//	}
 
 	public static boolean isSameFluid(Fluid f1, Fluid f2) { // TODO replace f1, f2 with FlowingFluid and inline
 		if (f1 == Fluids.EMPTY)
@@ -503,7 +571,7 @@ public class FFluidStatic {
 	public static boolean canFlow(IBlockReader world, BlockPos fromPos, Direction inDirection) {
 		BlockState state1 = world.getBlockState(fromPos);
 		BlockState state2 = world.getBlockState(fromPos.relative(inDirection));
-		if (state2.canOcclude() && !canHoldFluid(state2)) { // TODO need canOcclude?
+		if (state2.canOcclude() && !canHoldFluid(state2)) { // TODO canOcclude?
 			return false;
 		}
 		VoxelShape voxelShape1 = state1.getCollisionShape(world, fromPos);
@@ -514,48 +582,48 @@ public class FFluidStatic {
 		return !VoxelShapes.mergedFaceOccludes(voxelShape1, voxelShape2, inDirection);
 	}
 
-	public static boolean canFlow(IBlockReader w, BlockPos fromPos, BlockPos toPos, BlockState state1, BlockState state2, Fluid fluid) {
-
-		Fluid f2 = state2.getFluidState().getType();
-		if (f2.isSame(fluid) && state1.getBlock() instanceof FlowingFluidBlock
-				&& state2.getBlock() instanceof FlowingFluidBlock) {
-			return true;
-		}
-
-		FluidPars fp2 = (FluidPars) ((IBlockExtended) state2.getBlock()).getCustomBlockPars().get(FluidPars.class);
-		FluidPars fp1 = (FluidPars) ((IBlockExtended) state1.getBlock()).getCustomBlockPars().get(FluidPars.class);
-		boolean posos = false;
-		if (fp1 != null) {
-			if (fp1.isPassable == 1) {
-				posos = true;
-			}
-		}
-		Direction dir = DirectionStatic.dirFromVec(fromPos, toPos);
-		if (fp2 != null) {
-			if (fp2.isPassable == 1) {
-				// System.out.println(state2);
-				return true;
-			} else if (fp2.isPassable == -1) {
-				return false;
-			}
-			if ((state2.getFluidState().isEmpty() || state1.getFluidState().canBeReplacedWith(w, fromPos, f2, dir))
-					&& fp2.isDestroyableBy(fluid))
-				return true;
-		}
-
-		if (state2.canOcclude() && !posos && !state2.hasProperty(WATERLOGGED)) {
-			return false;
-		}
-		if (!(fluid instanceof WaterFluid) && (state1.hasProperty(WATERLOGGED) || state2.hasProperty(WATERLOGGED))) {
-			return false;
-		}
-		VoxelShape voxelShape1 = state1.getCollisionShape(w, fromPos);
-		VoxelShape voxelShape2 = state2.getCollisionShape(w, toPos);
-		if ((voxelShape1.isEmpty() || posos) && voxelShape2.isEmpty()) {
-			return true;
-		}
-		return !VoxelShapes.mergedFaceOccludes(voxelShape1, voxelShape2, dir);
-	}
+//	public static boolean canFlow(IBlockReader w, BlockPos fromPos, BlockPos toPos, BlockState state1, BlockState state2, Fluid fluid) {
+//
+//		Fluid f2 = state2.getFluidState().getType();
+//		if (f2.isSame(fluid) && state1.getBlock() instanceof FlowingFluidBlock
+//				&& state2.getBlock() instanceof FlowingFluidBlock) {
+//			return true;
+//		}
+//
+//		FluidPars fp2 = (FluidPars) ((IBlockExtended) state2.getBlock()).getCustomBlockPars().get(FluidPars.class);
+//		FluidPars fp1 = (FluidPars) ((IBlockExtended) state1.getBlock()).getCustomBlockPars().get(FluidPars.class);
+//		boolean posos = false;
+//		if (fp1 != null) {
+//			if (fp1.isPassable == 1) {
+//				posos = true;
+//			}
+//		}
+//		Direction dir = DirectionStatic.dirFromVec(fromPos, toPos);
+//		if (fp2 != null) {
+//			if (fp2.isPassable == 1) {
+//				// System.out.println(state2);
+//				return true;
+//			} else if (fp2.isPassable == -1) {
+//				return false;
+//			}
+//			if ((state2.getFluidState().isEmpty() || state1.getFluidState().canBeReplacedWith(w, fromPos, f2, dir))
+//					&& fp2.isDestroyableBy(fluid))
+//				return true;
+//		}
+//
+//		if (state2.canOcclude() && !posos && !state2.hasProperty(WATERLOGGED)) {
+//			return false;
+//		}
+//		if (!(fluid instanceof WaterFluid) && (state1.hasProperty(WATERLOGGED) || state2.hasProperty(WATERLOGGED))) {
+//			return false;
+//		}
+//		VoxelShape voxelShape1 = state1.getCollisionShape(w, fromPos);
+//		VoxelShape voxelShape2 = state2.getCollisionShape(w, toPos);
+//		if ((voxelShape1.isEmpty() || posos) && voxelShape2.isEmpty()) {
+//			return true;
+//		}
+//		return !VoxelShapes.mergedFaceOccludes(voxelShape1, voxelShape2, dir);
+//	}
 
 	// ================= MIXINS ==================//
 
@@ -563,27 +631,25 @@ public class FFluidStatic {
 
 		Vector3d vel = new Vector3d(0, 0, 0);
 		int level = fs.getAmount();
-		BlockState state = fs.createLegacyBlock();
 		Fluid fluid = fs.getType();
 		BlockPos posu = pos.above();
 
 		boolean flag = false;
 
-		BlockState stateu = w.getBlockState(posu);
+		FluidState stateu = w.getFluidState(posu);
 
-		if (canFlow(w, pos, posu, state, stateu, fluid) && !stateu.getFluidState().isEmpty()) {
-			level += stateu.getFluidState().getAmount();
+		if (canFlow(w, pos, Direction.UP) && !stateu.isEmpty()) {
+			level += stateu.getAmount();
 			flag = true;
 		}
 
 		for (Direction dir : Direction.Plane.HORIZONTAL) {
 			BlockPos pos2 = pos.relative(dir);
 
-			BlockState state2 = w.getBlockState(pos2);
-			FluidState fs2 = state2.getFluidState();
+			FluidState state2 = w.getFluidState(pos2);
 
-			if (!fs2.isEmpty() && canFlow(w, pos, pos2, state, state2, fluid)) {
-				int lvl2 = fs2.getAmount();
+			if (!state2.isEmpty() && canFlow(w, pos, dir)) {
+				int lvl2 = state2.getAmount();
 				if (flag) {
 					FluidState fs2u = w.getFluidState(pos2.above());
 					if (isSameFluid(fluid, fs2u.getType())) {
@@ -602,6 +668,26 @@ public class FFluidStatic {
 	}
 
 	/**
+	 * schedules fluid tick if fluid:<br/>
+	 * 1) is not empty<br/>
+	 * 2) chunk is generated (no cascading worldgen from fluids)<br/>
+	 * 3) does not already have scheduled tick
+	 * @param world
+	 * @param pos
+	 * @param fluid
+	 */
+	public static void scheduleFluidTick(IWorld world, BlockPos pos, Fluid fluid) {
+		if (!fluid.isSame(Fluids.EMPTY)) { // only schedule tick if contains fluid
+			if (world.hasChunkAt(pos)) { // fluids should not gen chunks (but if not ticking should tick once they're ticking again)
+				if (!world.getLiquidTicks().hasScheduledTick(pos, fluid)) { // no duplicate ticks
+					world.getLiquidTicks().scheduleTick(pos, fluid, fluid.getTickDelay(world));
+					// ticking chunk check not needed, because not ticking chunks do not process their ticks until they start ticking again
+				}
+			}
+		}
+	}
+
+	/**
 	 * only used by mixin into flowing fluid tick()
 	 * @param world
 	 * @param pos
@@ -609,15 +695,112 @@ public class FFluidStatic {
 	 */
 	public static void tickFlowingFluid(World world, BlockPos pos, FluidState fluidState) {
 		if (!fluidState.isEmpty()) { // if empty, skip ticking
-			// TODO lava-water interaction: check LavaFluid.spreadTo() -- config: #lava packets == 1 stone (maybe consume 1 or #lava water packets?)
-			// TODO make water sounds when packets move (ClientWorld.setFluid/setBlock)
-//			if (pRandom.nextInt(64) == 0) {
-//				pLevel.playLocalSound((double)pPos.getX() + 0.5D, (double)pPos.getY() + 0.5D, (double)pPos.getZ() + 0.5D, SoundEvents.WATER_AMBIENT, SoundCategory.BLOCKS, pRandom.nextFloat() * 0.25F + 0.75F, pRandom.nextFloat() + 0.5F, false);
-//			}
-			if (!world.isClientSide) { // only on server new fluid task
-				FluidTasksManager.addFluidTask((ServerWorld) world, pos);
+			if (!world.isClientSide) { // only on server
+				// TODO do not tick if was changed from other pos (check hasScheduledTick?)
+
+				// fluid mixing (from lava perspective: works because setFluid of water schedules neighbor lava tick)
+				// if this is lava
+				if (world.getBlockState(pos).is(Blocks.LAVA)) {
+					// find water neighbor
+					BlockPos neighborPos = null;
+					boolean hasWaterNeighbor = false;
+					for (Direction dir: getDirsDownRandomHorizontalUp(world.random)) {
+						neighborPos = pos.relative(dir);
+						if (canFlow(world, pos, dir) && world.getBlockState(neighborPos).is(Blocks.WATER)) {
+							hasWaterNeighbor = true;
+							break;
+						}
+					}
+					if (hasWaterNeighbor) {
+						Fluid thisFluid = world.getFluidState(pos).getType();
+						Fluid neighborFluid = world.getFluidState(neighborPos).getType();
+						// constants
+						FluidState emptyFluid = Fluids.EMPTY.defaultFluidState();
+						BlockState obsidian = Blocks.OBSIDIAN.defaultBlockState();
+						BlockState cobblestone = Blocks.COBBLESTONE.defaultBlockState();
+						BlockState stone = Blocks.STONE.defaultBlockState();
+						// fluid mixing cases:
+						if (thisFluid.isSame(Fluids.LAVA)) { // case 1: lava source + water (source or flowing) => obsidian
+							setBlockAndFluid(world, pos, obsidian, emptyFluid, false); // TODO drop old block if waterlogged
+						} else if (thisFluid.isSame(Fluids.FLOWING_LAVA)) {
+							if (neighborFluid.isSame(Fluids.WATER)) { // case 2: lava flowing + water source => stone
+								setBlockAndFluid(world, pos, stone, emptyFluid, false); // TODO drop old block if waterlogged
+							} else { // case 3: lava flowing + water flowing => cobblestone
+								setBlockAndFluid(world, pos, cobblestone, emptyFluid, false); // TODO drop old block if waterlogged
+							}
+						}
+						// also remove water
+						removeFluidAlsoBlock(world, neighborPos); // keep old block if waterlogged
+						// TODO play lava and water hissing sounds
+						return;
+						// TODO lava-water interaction FlowingFluidBlock.shouldSpreadLiquid
+						// TODO lava-water interaction: check LavaFluid.spreadTo() -- config: #lava packets == 1 stone (maybe consume 1 or #lava water packets?)
+					}
+				}
+
+				// find the closest ledge & move towards ledge
+				LedgeFinder ledgeFinder = new LedgeFinder(world);
+				Tuple2<Boolean, Direction> successAndLedgeDirection = ledgeFinder.tryExecuteWithResult(pos);
+				if (successAndLedgeDirection.first) { // only push towards ledge
+					BlockPos ledgeDirPos = pos.relative(successAndLedgeDirection.second);
+//					FluidState fromFluidState = world.getFluidState(pos);
+//					FluidState toFluidState = world.getFluidState(ledgeDirPos);
+//					Tuple3<Boolean, Integer, FluidState> tuple3 = FFluidStatic.placeLevelsUpTo(toFluidState, fromFluidState.getAmount());
+//					Boolean wasPlaced = tuple3.first;
+//					Integer placedLevels = tuple3.second;
+//					FluidState newFluidState = tuple3.third;
+//					if (wasPlaced) { // levels were actually placed
+//						 -= placedLevels;
+//					}
+					// TODO consider fluid at ledgeDirPos
+					removeFluidAlsoBlock(world, pos); // remove fluid from old pos
+					setFluidAlsoBlock(world, ledgeDirPos, fluidState); // add fluid to new pos
+					// TODO play sound
+					// TODO update fluids recursively up-flow if all moving to ledge? (keep packets together)
+				} else { // do normal equalization
+					// TODO check FFluidDefault/Basic/EQ
+					// TODO (make action iterable?)
+					// nop // TODO fix
+//				1) only **send** fluid to neighbors (always 1 packet?) - receive from ticking neighbors with higher level
+//				2) schedule tick for all neighbors if changed
+//				3) if ledge: only send fluid towards ledge?
+//				4) .... looks good?
+				}
+
+				// TODO when flow triggered here call World.playLocalSound() -> ClientWorld.playLocalSound()... nop on server
+				// make water/lava (forge fluid?) sounds when packets move (mixin to ClientWorld.setFluid?)
+//			pLevel.playLocalSound((double)pPos.getX() + 0.5D, (double)pPos.getY() + 0.5D, (double)pPos.getZ() + 0.5D, SoundEvents.WATER_AMBIENT, SoundCategory.BLOCKS, pRandom.nextFloat() * 0.25F + 0.75F, pRandom.nextFloat() + 0.5F, false);
+//			pLevel.playLocalSound((double)pPos.getX(), (double)pPos.getY(), (double)pPos.getZ(), SoundEvents.LAVA_AMBIENT, SoundCategory.BLOCKS, 0.2F + pRandom.nextFloat() * 0.2F, 0.9F + pRandom.nextFloat() * 0.15F, false);
 			}
 		}
+	}
+
+	private static void equalize(World world, BlockPos startPos) {
+		// we assume no ledges nearby
+		FluidState startFS = world.getFluidState(startPos);
+		List<FluidState> neighborFluidStates = new ArrayList<>();
+		// find valid neighbors
+		for (Direction dir: getDirsRandomHorizontal(world.random)) {
+			if (canFlow(world, startPos, dir)) {
+				BlockPos neighborPos = startPos.relative(dir);
+				FluidState neighborFS = world.getFluidState(neighborPos);
+				BlockState neighborBS = world.getBlockState(neighborPos);
+				if (FFluidStatic.canHoldFluid(neighborBS)) {
+					if (startFS.getType().isSame(neighborFS.getType()) || neighborFS.isEmpty()) { // only same fluid or empty
+						neighborFluidStates.add(neighborFS);
+					}
+				}
+			}
+		}
+		// get fluid packet sum
+		int packetSum = startFS.getAmount();
+		for (FluidState fs: neighborFluidStates) {
+			packetSum += fs.getAmount();
+		}
+		// do packet math
+		int packetsEach = packetSum / (1 + neighborFluidStates.size());
+		int remainder = packetSum % packetsEach;
+
 	}
 
 	/**

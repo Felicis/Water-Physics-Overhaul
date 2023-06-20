@@ -2,8 +2,10 @@ package net.skds.wpo.fluidphysics.actioniterables;
 
 import it.unimi.dsi.fastutil.longs.Long2ObjectLinkedOpenHashMap;
 import net.minecraft.block.BlockState;
+import net.minecraft.fluid.FlowingFluid;
 import net.minecraft.fluid.Fluid;
 import net.minecraft.fluid.FluidState;
+import net.minecraft.fluid.LavaFluid;
 import net.minecraft.util.Direction;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
@@ -17,13 +19,17 @@ public class FluidDisplacer extends AbstractFluidActionIterable<Void> {
     int levelsToPlace;
     boolean complete = false;
     World world;
-    Fluid fluid;
+    FlowingFluid fluid;
     Long2ObjectLinkedOpenHashMap<FluidState> states = new Long2ObjectLinkedOpenHashMap<>();
 
     public FluidDisplacer(World world, FluidState oldFluidState) {
-        fluid = oldFluidState.getType();
-        levelsToPlace = oldFluidState.getAmount();
-        this.world = world;
+        if (oldFluidState.isEmpty()) {
+            complete = true; // no fluid to displace
+        } else {
+            fluid = (FlowingFluid) oldFluidState.getType(); // cast safe because not empty
+            levelsToPlace = oldFluidState.getAmount();
+            this.world = world;
+        }
     }
 
     @Override
@@ -56,7 +62,7 @@ public class FluidDisplacer extends AbstractFluidActionIterable<Void> {
     protected void addInitial(Set<BlockPos> set, BlockPos pos0) {
         // since current pos should displace, it is not valid initial pos,
         // therefore use all adjacent pos that are valid and can flow to
-        for (Direction randDir : FFluidStatic.getRandomizedDirections(world.getRandom(), true)) {
+        for (Direction randDir : FFluidStatic.getDirsDownRandomHorizontalUp(world.getRandom())) {
             BlockPos adjacentPos = pos0.relative(randDir);
             if (isValidPos(adjacentPos) && FFluidStatic.canFlow(world, pos0, randDir)) {
                 set.add(adjacentPos);
@@ -67,7 +73,7 @@ public class FluidDisplacer extends AbstractFluidActionIterable<Void> {
     @Override
     protected void process(BlockPos pos) {
         FluidState state = world.getFluidState(pos);
-        Tuple3<Boolean, Integer, FluidState> tuple3 = FFluidStatic.placeLevelsUpTo(state, levelsToPlace);
+        Tuple3<Boolean, Integer, FluidState> tuple3 = FFluidStatic.placeLevelsUpTo(state, fluid, levelsToPlace);
         Boolean wasPlaced = tuple3.first;
         Integer placedLevels = tuple3.second;
         FluidState newFluidState = tuple3.third;

@@ -141,6 +141,13 @@ public abstract class ChunkSectionMixin implements ChunkSectionMixinInterface {
                 }
             }
         });
+        ci.cancel();
+    }
+
+
+    @Override
+    public PalettedContainer<FluidState> getFluidStates() {
+        return this.fluidStates;
     }
 
     @Inject(method = "read", at = @At(value = "RETURN"))
