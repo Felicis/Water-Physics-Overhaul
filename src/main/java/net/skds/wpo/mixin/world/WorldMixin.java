@@ -19,14 +19,14 @@ import net.minecraft.world.server.ChunkHolder;
 import net.minecraftforge.common.capabilities.CapabilityProvider;
 import net.minecraftforge.common.extensions.IForgeWorld;
 import net.skds.wpo.fluidphysics.FFluidStatic;
-import net.skds.wpo.mixininterfaces.FluidMixinInterface;
-import net.skds.wpo.mixininterfaces.FluidStateMixinInterface;
 import net.skds.wpo.mixininterfaces.*;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import javax.annotation.Nullable;
 import java.util.Random;
@@ -60,6 +60,12 @@ public abstract class WorldMixin extends CapabilityProvider<World> implements Wo
     private boolean setBlock_AlsoFluid(World world, BlockPos pos, BlockState blockState, int pFlags, int pRecursionLeft) {
         // set blockstate adapted to fluidstate or displace fluid
         return FFluidStatic.setBlockAlsoFluid(world, pos, blockState, true, pFlags, pRecursionLeft); // UPGRADE mixin direct usages of this method
+    }
+
+    @Inject(method = "neighborChanged", at = @At(value = "INVOKE", target = "Lnet/minecraft/block/BlockState;neighborChanged(Lnet/minecraft/world/World;Lnet/minecraft/util/math/BlockPos;Lnet/minecraft/block/Block;Lnet/minecraft/util/math/BlockPos;Z)V"))
+    private void neighborChanged_Fluid(BlockPos pPos, Block pBlock, BlockPos pFromPos, CallbackInfo ci) {
+        FluidState fluidState = this.getFluidState(pPos);
+        ((FluidStateMixinInterface)(Object) fluidState).neighborChanged((World)(Object) this, pPos, fluidState.getType(), pFromPos, false);
     }
 
     /**
@@ -150,6 +156,7 @@ public abstract class WorldMixin extends CapabilityProvider<World> implements Wo
             }
 
             // if BLOCK_UPDATE && (isServer || NO_RERENDER) && (isClient || chunk is TICKING or closer)
+            // OR: BLOCK_UPDATE && (isClient => NO_RERENDER) && (isServer => chunk is TICKING or closer)
             // server => send update to clients
             if ((pFlags & 2) != 0 && (!this.isClientSide || (pFlags & 4) == 0) && (this.isClientSide || chunk.getFullStatus() != null && chunk.getFullStatus().isOrAfter(ChunkHolder.LocationType.TICKING))) {
                 this.sendFluidUpdated(pPos, oldFluidState, newFluidState, pFlags); // send fluidstate change to clients (sets to be sent on next chunk tick)
@@ -193,17 +200,26 @@ public abstract class WorldMixin extends CapabilityProvider<World> implements Wo
     @Override
     public void updateNeighborsAt(BlockPos pPos, Fluid pFluid) {
         // CHANGE no forge event exists for fluid state update
-        // randomize neighbor update order (first below, then random horizontal, then above)
-        for (Direction dir : FFluidStatic.getDirsDownRandomHorizontalUp(random)) {
+        // update 3x3 area around pPos and 3x3 above (fluid flows down)
+        // order: bottom -> sides -> diagonals -> above
+        // TODO check if can Flow (maybe even action iterable for scheduling ticks?)
+        /* 3x3 around pPos */
+        this.neighborChanged(pPos.below(), pFluid, pPos); // below
+        for (Direction dir : FFluidStatic.getDirsRandomHorizontal(random)) { // random sides
             this.neighborChanged(pPos.relative(dir), pFluid, pPos);
         }
-        // why use fixed order ???
-//        this.neighborChanged(pPos.west(), pFluid, pPos);
-//        this.neighborChanged(pPos.east(), pFluid, pPos);
-//        this.neighborChanged(pPos.below(), pFluid, pPos);
-//        this.neighborChanged(pPos.above(), pFluid, pPos);
-//        this.neighborChanged(pPos.north(), pFluid, pPos);
-//        this.neighborChanged(pPos.south(), pFluid, pPos);
+        for (Direction dir : FFluidStatic.getDirsRandomHorizontal(random)) { // random diag (towards random dir and right)
+            this.neighborChanged(pPos.relative(dir).relative(dir.getClockWise()), pFluid, pPos);
+        }
+        /* 3x3 above pPos */
+        BlockPos abovePos = pPos.above();
+        this.neighborChanged(abovePos, pFluid, pPos); // above
+        for (Direction dir : FFluidStatic.getDirsRandomHorizontal(random)) { // random sides above
+            this.neighborChanged(abovePos.relative(dir), pFluid, pPos);
+        }
+        for (Direction dir : FFluidStatic.getDirsRandomHorizontal(random)) { // random diag (towards random dir and right)
+            this.neighborChanged(abovePos.relative(dir).relative(dir.getClockWise()), pFluid, pPos);
+        }
     }
 
     @Override
@@ -213,6 +229,7 @@ public abstract class WorldMixin extends CapabilityProvider<World> implements Wo
             FluidState fluidState = this.getFluidState(pPos);
 
             try {
+                // TODO maybe also block neighborChanged?
                 ((FluidStateMixinInterface) (Object) fluidState).neighborChanged((World) (Object) this, pPos, pFluid, pFromPos, false);
             } catch (Throwable throwable) {
                 CrashReport crashreport = CrashReport.forThrowable(throwable, "Exception while updating neighbours");
@@ -236,8 +253,7 @@ public abstract class WorldMixin extends CapabilityProvider<World> implements Wo
     }
 
     @Override
-    public boolean setFluidAndUpdate(BlockPos pPos, FluidState pState) {
-        // copied from World.setBlockAndUpdate
+    public boolean setFluid(BlockPos pPos, FluidState pState) {
         return this.setFluid(pPos, pState, 3);
     }
 

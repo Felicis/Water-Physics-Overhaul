@@ -34,7 +34,7 @@ public interface WorldMixinInterface extends IWorldWriterMixinInterface {
 
     void neighborChanged(BlockPos pPos, Fluid pFluid, BlockPos pFromPos);
 
-    boolean setFluidAndUpdate(BlockPos pPos, FluidState pState);
+    boolean setFluid(BlockPos pPos, FluidState pState);
 
     void updateNeighborsAtExceptFromFacing(BlockPos pPos, Fluid pFluidType, Direction pSkipSide);
 }

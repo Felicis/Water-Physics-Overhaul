@@ -78,6 +78,7 @@
   ],
   "client": [
     "fluid.FluidBlockRendererMixin",
+    "renderer.DebugOverlayGuiMixin",
     "renderer.ModelManagerMixin",
     "world.ClientWorldMixin"
   ],

@@ -12,18 +12,15 @@ import net.skds.wpo.util.Constants;
 import net.skds.wpo.util.tuples.Tuple2;
 
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 
 public class TankFiller extends AbstractFluidActionIterable<Integer> {
 
     int maxTankLevels;
     int levelsUntilFull;
-    boolean complete = false;
-    World world;
     FlowingFluid fluid;
     IFluidHandlerItem fluidHandlerItem;
-    Long2ObjectLinkedOpenHashMap<FluidState> states = new Long2ObjectLinkedOpenHashMap<>();
+    Map<BlockPos, FluidState> states = new HashMap<>();
     Map<BlockPos, BlockPos> backwardsFlowMap = new HashMap<>();
 
     /**
@@ -34,29 +31,14 @@ public class TankFiller extends AbstractFluidActionIterable<Integer> {
      * @param fluid
      * @param fluidHandlerItem
      */
-    public TankFiller(World world, FlowingFluid fluid, IFluidHandlerItem fluidHandlerItem) {
-        this.world = world;
+    public TankFiller(World world, BlockPos startPos, FlowingFluid fluid, IFluidHandlerItem fluidHandlerItem) {
+        super(world, startPos, WPOConfig.COMMON.maxBucketDist.get());
         this.fluid = fluid;
         this.fluidHandlerItem = fluidHandlerItem;
         maxTankLevels = this.fluidHandlerItem.getTankCapacity(0) / Constants.MILLIBUCKETS_PER_LEVEL;
         int currentLevel = this.fluidHandlerItem.getFluidInTank(0).getAmount() / Constants.MILLIBUCKETS_PER_LEVEL;
         // TODO config max levels until full?
         levelsUntilFull = maxTankLevels - currentLevel;
-    }
-
-    @Override
-    protected int getMaxRange() {
-        return WPOConfig.COMMON.maxBucketDist.get();
-    }
-
-    @Override
-    protected boolean isComplete() {
-        return complete;
-    }
-
-    @Override
-    protected World getWorld() {
-        return world;
     }
 
     @Override
@@ -89,18 +71,18 @@ public class TankFiller extends AbstractFluidActionIterable<Integer> {
         FluidState newFluidState = takenLvlsAndNewFS.second;
         if (takenLevels > 0) { // levels were actually taken
             levelsUntilFull -= takenLevels;
-            complete = (levelsUntilFull == 0);
-            states.put(pos.asLong(), newFluidState);
+            isComplete = (levelsUntilFull == 0);
+            states.put(pos, newFluidState);
         } // else do nothing
     }
 
     @Override
-    protected Integer finishSuccess(int flags, int recursion) {
+    protected Integer finishComplete(int flags, int recursion) {
         return finish(flags, recursion); // same as fail
     }
 
     @Override
-    protected Integer finishFail(int flags, int recursion) {
+    protected Integer finishNotComplete(int flags, int recursion) {
         return finish(flags, recursion); // same as success
     }
 

@@ -73,8 +73,7 @@ public abstract class FlowingFluidBlockMixin extends Block implements WPOFluidMa
         // UPGRADE: copied from FlowingFluidBlock.updateShape with changes
         // change: do not check source, check canFlow and canHoldFluid
         if (FFluidStatic.canFlow(pLevel, pCurrentPos, pFacing) && FFluidStatic.canHoldFluid(pFacingState)) {
-            FFluidStatic.scheduleFluidTick(pLevel, pCurrentPos, this.fluid.getFluid());
-            pLevel.getLiquidTicks().scheduleTick(pCurrentPos, pLevel.getFluidState(pCurrentPos).getType(), this.fluid.getTickDelay(pLevel));
+            FFluidStatic.scheduleFluidTick(pLevel, pCurrentPos);
         }
         cir.setReturnValue(super.updateShape(pState, pFacing, pFacingState, pLevel, pCurrentPos, pFacingPos));
     }
@@ -85,7 +84,7 @@ public abstract class FlowingFluidBlockMixin extends Block implements WPOFluidMa
     @Inject(method = "neighborChanged", at = @At(value = "HEAD"), cancellable = true)
     private void neighborChangedM(BlockState pState, World pLevel, BlockPos pPos, Block pBlock, BlockPos pFromPos, boolean pIsMoving, CallbackInfo ci) {
         // TODO sync with FluidMixin
-        FFluidStatic.scheduleFluidTick(pLevel, pPos, this.fluid.getFluid());
+        FFluidStatic.scheduleFluidTick(pLevel, pPos);
         ci.cancel();
     }
 }

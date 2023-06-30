@@ -9,32 +9,18 @@ import net.skds.wpo.WPOConfig;
 import net.skds.wpo.fluidphysics.FFluidStatic;
 import net.skds.wpo.util.tuples.Tuple2;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class BottleFiller extends AbstractFluidActionIterable<Void> {
 
     int bottleLevels = 3;
-    boolean complete = false;
-    World world;
     FlowingFluid fluid;
-    Long2ObjectLinkedOpenHashMap<FluidState> states = new Long2ObjectLinkedOpenHashMap<>();
+    Map<BlockPos, FluidState> states = new HashMap<>();
 
-    public BottleFiller(World w, FlowingFluid f) {
-        world = w;
+    public BottleFiller(World w, BlockPos startPos, FlowingFluid f) {
+        super(w, startPos, WPOConfig.COMMON.maxBucketDist.get());
         fluid = f;
-    }
-
-    @Override
-    protected int getMaxRange() {
-        return WPOConfig.COMMON.maxBucketDist.get();
-    }
-
-    @Override
-    protected boolean isComplete() {
-        return complete;
-    }
-
-    @Override
-    protected World getWorld() {
-        return world;
     }
 
     @Override
@@ -50,19 +36,19 @@ public class BottleFiller extends AbstractFluidActionIterable<Void> {
         FluidState newFluidState = takenLvlsAndNewFS.second;
         if (takenLevels > 0) { // levels were actually taken
             bottleLevels -= takenLevels;
-            complete = (bottleLevels == 0);
-            states.put(pos.asLong(), newFluidState);
+            isComplete = (bottleLevels == 0);
+            states.put(pos, newFluidState);
         } // else do nothing
     }
 
     @Override
-    protected Void finishSuccess(int flags, int recursion) {
+    protected Void finishComplete(int flags, int recursion) {
         multiSetFluid(states, flags, recursion);
         return null;
     }
 
     @Override
-    protected Void finishFail(int flags, int recursion) {
+    protected Void finishNotComplete(int flags, int recursion) {
         return null;
     }
 }

@@ -36,7 +36,7 @@ public abstract class FluidMixin extends ForgeRegistryEntry<Fluid> implements WP
     @Override
     public void onPlace(FluidState pNewState, World pLevel, BlockPos pPos, FluidState pOldState, boolean pIsMoving) {
         // schedule fluid ticks after updating (this is called after successful setFluid, where FluidState actually changed)
-        FFluidStatic.scheduleFluidTick(pLevel, pPos, pNewState.getType());
+        FFluidStatic.scheduleFluidTick(pLevel, pPos);
     }
 
     /**
@@ -56,7 +56,7 @@ public abstract class FluidMixin extends ForgeRegistryEntry<Fluid> implements WP
     @Override
     public void neighborChanged(FluidState pState, World pLevel, BlockPos pPos, Fluid pFluid, BlockPos pFromPos, boolean pIsMoving) {
         //
-        FFluidStatic.scheduleFluidTick(pLevel, pPos, this.getFluid());
+        FFluidStatic.scheduleFluidTick(pLevel, pPos);
     }
 
     @Override

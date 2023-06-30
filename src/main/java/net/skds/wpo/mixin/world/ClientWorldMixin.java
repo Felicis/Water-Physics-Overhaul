@@ -51,6 +51,12 @@ public abstract class ClientWorldMixin extends World implements ClientWorldMixin
         return this.getFluidState(pBlockPos.below());
     }
 
+    @Redirect(method = "setKnownState", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/world/ClientWorld;setBlock(Lnet/minecraft/util/math/BlockPos;Lnet/minecraft/block/BlockState;I)Z"))
+    private boolean setBlock_NoFluid(ClientWorld instance, BlockPos pos, BlockState blockState, int flags) {
+        // blockstate comes from server and should already be adapted to fluid state (is considered correct)
+        return ((WorldMixinInterface) instance).setBlockNoFluid(pos, blockState, flags);
+    }
+
     @Override
     public void setKnownState(BlockPos pPos, FluidState pState) {
         // UPGRADE: this is called for client sync => new SChangeFluidPacket and SMultiFluidChangePacket + ClientWPONetHandler

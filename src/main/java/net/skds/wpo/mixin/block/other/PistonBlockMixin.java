@@ -1,7 +1,16 @@
 package net.skds.wpo.mixin.block.other;
 
+import net.minecraft.block.BlockState;
+import net.minecraft.block.Blocks;
 import net.minecraft.block.PistonBlock;
+import net.minecraft.fluid.FluidState;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.World;
+import net.skds.wpo.fluidphysics.FFluidStatic;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Redirect;
+import org.spongepowered.asm.mixin.injection.Slice;
 
 @Mixin(PistonBlock.class)
 public class PistonBlockMixin {
@@ -15,4 +24,14 @@ public class PistonBlockMixin {
 //        FluidState fluidState = world.getFluidState(pPos);
 //        return FFluidStatic.setFluidForBlock(world, pPos, fluidState, pFlags);
 //    }
+
+    @Redirect(method = "moveBlocks", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/World;setBlock(Lnet/minecraft/util/math/BlockPos;Lnet/minecraft/block/BlockState;I)Z"),
+            slice = @Slice(from = @At(value = "INVOKE", target = "Ljava/util/Map;keySet()Ljava/util/Set;")))
+    private boolean setBlock_AndFluid(World instance, BlockPos pPos, BlockState pNewState, int pFlags) {
+        // !!!!!!!! adapt to fluids here, because ever though is moving, does not change anymore (vacated by piston movement)
+        // this means the moving block check in FFluidStatic.setBlockAlsoFluid() will be wrong
+        assert pNewState.is(Blocks.AIR); // vacated by piston is set to air => adapt fluids
+        FluidState fluidState = instance.getFluidState(pPos);
+        return FFluidStatic.setBlockAndFluid(instance, pPos, pNewState, fluidState, false, pFlags); // displacing not necessary, because setting to air
+    }
 }

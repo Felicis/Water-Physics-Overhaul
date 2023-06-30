@@ -1,51 +1,35 @@
 package net.skds.wpo.fluidphysics.actioniterables;
 
-import it.unimi.dsi.fastutil.longs.Long2ObjectLinkedOpenHashMap;
 import net.minecraft.block.BlockState;
 import net.minecraft.fluid.FlowingFluid;
-import net.minecraft.fluid.Fluid;
 import net.minecraft.fluid.FluidState;
-import net.minecraft.fluid.LavaFluid;
+import net.minecraft.fluid.Fluids;
 import net.minecraft.util.Direction;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import net.skds.wpo.fluidphysics.FFluidStatic;
 import net.skds.wpo.util.tuples.Tuple3;
 
-import java.util.Set;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class FluidDisplacer extends AbstractFluidActionIterable<Void> {
 
     int levelsToPlace;
-    boolean complete = false;
-    World world;
     FlowingFluid fluid;
-    Long2ObjectLinkedOpenHashMap<FluidState> states = new Long2ObjectLinkedOpenHashMap<>();
+    Map<BlockPos, FluidState> states = new HashMap<>();
 
-    public FluidDisplacer(World world, FluidState oldFluidState) {
+    public FluidDisplacer(World world, BlockPos startPos, FluidState oldFluidState) {
+        super(world, startPos, 10); // TODO make config: max fluid displace distance?
         if (oldFluidState.isEmpty()) {
-            complete = true; // no fluid to displace
+            isComplete = true; // no fluid to displace
         } else {
             fluid = (FlowingFluid) oldFluidState.getType(); // cast safe because not empty
             levelsToPlace = oldFluidState.getAmount();
-            this.world = world;
         }
     }
 
-    @Override
-    protected boolean isComplete() {
-        return complete;
-    }
-
-    @Override
-    protected int getMaxRange() {
-        return 10; // TODO make config: max fluid displace distance?
-    }
-
-    @Override
-    protected World getWorld() {
-        return world;
-    }
 
     @Override
     protected boolean isValidPos(BlockPos pos) {
@@ -59,13 +43,13 @@ public class FluidDisplacer extends AbstractFluidActionIterable<Void> {
     }
 
     @Override
-    protected void addInitial(Set<BlockPos> set, BlockPos pos0) {
+    protected void addInitial(List<BlockPos> posList) {
         // since current pos should displace, it is not valid initial pos,
         // therefore use all adjacent pos that are valid and can flow to
         for (Direction randDir : FFluidStatic.getDirsDownRandomHorizontalUp(world.getRandom())) {
-            BlockPos adjacentPos = pos0.relative(randDir);
-            if (isValidPos(adjacentPos) && FFluidStatic.canFlow(world, pos0, randDir)) {
-                set.add(adjacentPos);
+            BlockPos adjacentPos = startPos.relative(randDir);
+            if (isValidPos(adjacentPos) && FFluidStatic.canFlow(world, startPos, randDir)) {
+                posList.add(adjacentPos);
             }
         }
     }
@@ -79,19 +63,22 @@ public class FluidDisplacer extends AbstractFluidActionIterable<Void> {
         FluidState newFluidState = tuple3.third;
         if (wasPlaced) { // levels were actually placed
             levelsToPlace -= placedLevels;
-            complete = (levelsToPlace == 0);
-            states.put(pos.asLong(), newFluidState);
+            isComplete = (levelsToPlace == 0);
+            states.put(pos, newFluidState);
         } // else do nothing
     }
 
     @Override
-    protected Void finishSuccess(int flags, int recursion) {
+    protected Void finishComplete(int flags, int recursion) {
+        if (!states.isEmpty()) { // fluid was moved from start pos => also update start pos state
+            states.put(startPos, Fluids.EMPTY.defaultFluidState());
+        }
         multiSetFluid(states, flags, recursion);
         return null;
     }
 
     @Override
-    protected Void finishFail(int flags, int recursion) {
+    protected Void finishNotComplete(int flags, int recursion) {
         return null;
     }
 }

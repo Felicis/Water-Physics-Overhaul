@@ -8,13 +8,10 @@ import net.skds.wpo.WPOConfig;
 import net.skds.wpo.fluidphysics.FFluidStatic;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 public class LedgeFinder extends AbstractFluidActionIterable<Direction> {
-    boolean complete = false;
-    World world;
-    BlockPos startPos;
     BlockPos afterLedgeDropPos;
 
     Map<BlockPos, BlockPos> backwardsFlowMap = new HashMap<>();
@@ -23,25 +20,11 @@ public class LedgeFinder extends AbstractFluidActionIterable<Direction> {
      * finds closest ledge, where fluid can flow one level down (could also be starting pos => direct down flow)<br/>
      * no fluid is moved, no checks whether flow path is blocked by other fluid, only canFlow and canHold<br/>
      * tryExecuteWithResult returns whether ledge found and the direction from starting pos to reach the ledge
+     *
      * @param world
      */
-    public LedgeFinder(World world) {
-        this.world = world;
-    }
-
-    @Override
-    int getMaxRange() {
-        return WPOConfig.COMMON.maxSlideDist.get() + 1; // because iterable has to go down off ledge
-    }
-
-    @Override
-    boolean isComplete() {
-        return complete;
-    }
-
-    @Override
-    World getWorld() {
-        return world;
+    public LedgeFinder(World world, BlockPos startPos) {
+        super(world, startPos, WPOConfig.COMMON.maxSlideDist.get() + 1); // +1 because iterable has to go down off ledge
     }
 
     @Override
@@ -67,10 +50,8 @@ public class LedgeFinder extends AbstractFluidActionIterable<Direction> {
     }
 
     @Override
-    protected void addInitial(Set<BlockPos> set, BlockPos pos0) {
-        // store inital pos
-        startPos = pos0;
-        set.add(pos0);
+    protected void addInitial(List<BlockPos> posList) {
+        posList.add(startPos);
     }
 
     @Override
@@ -79,7 +60,7 @@ public class LedgeFinder extends AbstractFluidActionIterable<Direction> {
         if (isLowerThanStartPos(pos)) {
             // found ledge!!
             afterLedgeDropPos = pos;
-            complete = true;
+            isComplete = true;
         }
     }
 
@@ -88,7 +69,7 @@ public class LedgeFinder extends AbstractFluidActionIterable<Direction> {
     }
 
     @Override
-    Direction finishSuccess(int flags, int recursion) {
+    Direction finishComplete(int flags, int recursion) {
         // follow backwards flow until start position and return starting direction (for flow to reach ledge)
         BlockPos toPos = afterLedgeDropPos;
         BlockPos fromPos = backwardsFlowMap.get(toPos); // flow backwards (afterLedgeDropPos can not be starting)
@@ -108,7 +89,7 @@ public class LedgeFinder extends AbstractFluidActionIterable<Direction> {
     }
 
     @Override
-    Direction finishFail(int flags, int recursion) {
+    Direction finishNotComplete(int flags, int recursion) {
         return null; // no ledge found
     }
 }

@@ -1,61 +1,37 @@
 package net.skds.wpo.fluidphysics.actioniterables;
 
-import it.unimi.dsi.fastutil.longs.Long2ObjectLinkedOpenHashMap;
 import net.minecraft.block.BlockState;
 import net.minecraft.fluid.FlowingFluid;
 import net.minecraft.fluid.FluidState;
-import net.minecraft.fluid.Fluids;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.capability.IFluidHandlerItem;
 import net.skds.wpo.WPOConfig;
 import net.skds.wpo.fluidphysics.FFluidStatic;
-import net.skds.wpo.util.Constants;
 import net.skds.wpo.util.tuples.Tuple3;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class TankFlusher extends AbstractFluidActionIterable<Integer> {
 
     int initalTankLevel;
     int levelsToPlace;
-    boolean complete = false;
-    World world;
     FlowingFluid tankFluid;
-    IFluidHandlerItem fluidHandler;
-    Long2ObjectLinkedOpenHashMap<FluidState> states = new Long2ObjectLinkedOpenHashMap<>();
+    Map<BlockPos, FluidState> states = new HashMap<>();
 
     /**
-     * empties task as much as possible starting at target pos<br/>
+     * empties tank as much as possible starting at target pos<br/>
      * tryExecuteWithResult returns whether completely emptying succeeded and the new tank level
+     *
      * @param world
-     * @param fluidHandler
+     * @param startPos
+     * @param tankFluid
+     * @param levelsToPlace
      */
-    public TankFlusher(World world, IFluidHandlerItem fluidHandler) {
-        this.fluidHandler = fluidHandler;
-        if (this.fluidHandler.getFluidInTank(0).isEmpty()) {
-            complete = true; // no fluid in tank
-        } else {
-            tankFluid = (FlowingFluid) this.fluidHandler.getFluidInTank(0).getFluid(); // safe cast because not empty
-            this.world = world;
-            // TODO config max levels to place?
-            initalTankLevel = this.fluidHandler.getFluidInTank(0).getAmount() / Constants.MILLIBUCKETS_PER_LEVEL;
-            levelsToPlace = initalTankLevel;
-        }
-    }
-
-    @Override
-    protected int getMaxRange() {
-        return WPOConfig.COMMON.maxBucketDist.get();
-    }
-
-    @Override
-    protected boolean isComplete() {
-        return complete;
-    }
-
-    @Override
-    protected World getWorld() {
-        return world;
+    public TankFlusher(World world, BlockPos startPos, FlowingFluid tankFluid, int levelsToPlace) {
+        super(world, startPos, WPOConfig.COMMON.maxBucketDist.get());
+        this.tankFluid = tankFluid;
+        this.levelsToPlace = levelsToPlace;
     }
 
     @Override
@@ -78,18 +54,18 @@ public class TankFlusher extends AbstractFluidActionIterable<Integer> {
         FluidState newFluidState = tuple3.third;
         if (wasPlaced) { // levels were actually placed
             levelsToPlace -= placedLevels;
-            complete = (levelsToPlace == 0);
-            states.put(pos.asLong(), newFluidState);
+            isComplete = (levelsToPlace == 0);
+            states.put(pos, newFluidState);
         } // else do nothing
     }
 
     @Override
-    protected Integer finishSuccess(int flags, int recursion) {
+    protected Integer finishComplete(int flags, int recursion) {
         return finish(flags, recursion); // same as success
     }
 
     @Override
-    protected Integer finishFail(int flags, int recursion) {
+    protected Integer finishNotComplete(int flags, int recursion) {
         return finish(flags, recursion); // same as success
     }
 

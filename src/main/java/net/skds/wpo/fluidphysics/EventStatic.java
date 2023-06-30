@@ -39,6 +39,10 @@ import net.skds.wpo.item.AdvancedBucket;
 import net.skds.wpo.mixininterfaces.WorldMixinInterface;
 import net.skds.wpo.util.Constants;
 import net.skds.wpo.util.tuples.Tuple2;
+import net.skds.wpo.util.tuples.Tuple3;
+
+import java.util.*;
+import java.util.stream.Collectors;
 
 import static net.skds.wpo.registry.Items.ADVANCED_BUCKET;
 
@@ -75,8 +79,8 @@ public class EventStatic {
 
         if (bucketFluid.isSame(Fluids.EMPTY)) { // PICK UP (bucket empty)
             if (!fluidAtPos.isSame(Fluids.EMPTY)) { // there is fluid at target pos
-                TankFiller filler = new TankFiller(world, (FlowingFluid) fluidAtPos, bucketHandler); // safe cast bc not empty
-                Tuple2<Boolean, Integer> successAndReturn = filler.tryExecuteWithResult(pos); // calls setFluid
+                TankFiller filler = new TankFiller(world, pos, (FlowingFluid) fluidAtPos, bucketHandler); // safe cast bc not empty
+                Tuple2<Boolean, Integer> successAndReturn = filler.tryExecuteWithResult(); // calls setFluid
                 if (!player.abilities.instabuild) { // if NOT creative mode => set new bucket level
                     if (successAndReturn.first) { // bucket was filled completely
                         event.setFilledBucket(new ItemStack(fluidAtPos.getBucket())); // full bucket
@@ -117,47 +121,54 @@ public class EventStatic {
                 }
             }
             if (!fluidAtPos.isSame(Fluids.EMPTY) && !fluidAtPos.isSame(bucketFluid)) {
-                // if pos contains different fluid => abort
+                // if contains different fluid => abort
                 event.setCanceled(true);
                 return;
             } else { // next block accepts fluid
                 // place fluid
-                TankFlusher flusher = new TankFlusher(world, bucketHandler);
-                Tuple2<Boolean, Integer> successAndReturn = flusher.tryExecuteWithResult(pos); // calls setFluid
-                if (!player.abilities.instabuild) { // if NOT creative mode => set new bucket level
-                    if (successAndReturn.first) { // bucket was emptied completely
-                        event.setFilledBucket(new ItemStack(Items.BUCKET)); // empty bucket
-                    } else { // partially filled bucket (WPO advanced bucket)
-                        // TODO handle forge containers
-                        int newLevel = successAndReturn.second;
-                        AdvancedBucket.FluidHandler advBucketHandler = new AdvancedBucket.FluidHandler(new ItemStack(ADVANCED_BUCKET.get()));
-                        FluidStack fluidStack = new FluidStack(fluidAtPos, newLevel * Constants.MILLIBUCKETS_PER_LEVEL);
-                        advBucketHandler.fill(fluidStack, IFluidHandler.FluidAction.EXECUTE);
-                        event.setFilledBucket(advBucketHandler.getContainer());
+                // TODO config max levels to place?
+                int oldLevel = bucketHandler.getFluidInTank(0).getAmount() / Constants.MILLIBUCKETS_PER_LEVEL;
+                TankFlusher flusher = new TankFlusher(world, pos, (FlowingFluid) bucketFluid, oldLevel); // safe cast because not empty
+                Tuple2<Boolean, Integer> successAndNewLevel = flusher.tryExecuteWithResult(); // calls setFluid
+                int newLevel = successAndNewLevel.second;
+                if (oldLevel == newLevel) { // nothing was placed => abort
+                    event.setCanceled(true);
+                    return;
+                } else { // fluid was placed
+                    if (!player.abilities.instabuild) { // if NOT creative mode => set new bucket level
+                        if (successAndNewLevel.first) { // bucket was emptied completely
+                            event.setFilledBucket(new ItemStack(Items.BUCKET)); // empty bucket
+                        } else { // partially filled bucket (WPO advanced bucket)
+                            // TODO handle forge containers
+                            AdvancedBucket.FluidHandler advBucketHandler = new AdvancedBucket.FluidHandler(new ItemStack(ADVANCED_BUCKET.get()));
+                            FluidStack fluidStack = new FluidStack(fluidAtPos, newLevel * Constants.MILLIBUCKETS_PER_LEVEL);
+                            advBucketHandler.fill(fluidStack, IFluidHandler.FluidAction.EXECUTE);
+                            event.setFilledBucket(advBucketHandler.getContainer());
+                        }
                     }
+                    // skip vanilla code: forge reduces bucket stack and places filled bucket from event in inventory
+                    event.setResult(Event.Result.ALLOW);
+                    // award stats & play sound (not done by forge; see BucketItem and ForgeEventFactory)
+                    Item item = bucketHandler.getContainer().getItem();
+                    player.awardStat(Stats.ITEM_USED.get(item));
+                    SoundEvent soundevent = fluidAtPos.getAttributes().getEmptySound();
+                    if (soundevent == null) {
+                        soundevent = fluidAtPos.is(FluidTags.LAVA) ? SoundEvents.BUCKET_EMPTY_LAVA : SoundEvents.BUCKET_EMPTY;
+                    }
+                    player.playSound(soundevent, 1.0F, 1.0F);
                 }
-                // skip vanilla code: forge reduces bucket stack and places filled bucket from event in inventory
-                event.setResult(Event.Result.ALLOW);
-                // award stats & play sound (not done by forge; see BucketItem and ForgeEventFactory)
-                Item item = bucketHandler.getContainer().getItem();
-                player.awardStat(Stats.ITEM_USED.get(item));
-                SoundEvent soundevent = fluidAtPos.getAttributes().getEmptySound();
-                if (soundevent == null) {
-                    soundevent = fluidAtPos.is(FluidTags.LAVA) ? SoundEvents.BUCKET_EMPTY_LAVA : SoundEvents.BUCKET_EMPTY;
+                Item bucketItem = bucketItemStack.getItem();
+                if (bucketItem instanceof FishBucketItem) {
+                    FishBucketItem fishItem = (FishBucketItem) bucketItem;
+                    fishItem.checkExtraContent(world, bucketItemStack, pos);
                 }
-                player.playSound(soundevent, 1.0F, 1.0F);
-            }
-            Item bucketItem = bucketItemStack.getItem();
-            if (bucketItem instanceof FishBucketItem) {
-                FishBucketItem fishItem = (FishBucketItem) bucketItem;
-                fishItem.checkExtraContent(world, bucketItemStack, pos);
             }
         }
     }
 
     public static boolean onBottleUse(World w, BlockPos pos) {
-        BottleFiller bottleFiller = new BottleFiller(w, Fluids.WATER);
-        return bottleFiller.tryExecute(pos);
+        BottleFiller bottleFiller = new BottleFiller(w, pos, Fluids.WATER);
+        return bottleFiller.tryExecute();
     }
 
     public static void onBlockPlace(BlockEvent.EntityPlaceEvent e) {
@@ -198,26 +209,76 @@ public class EventStatic {
             return;
         }
 
-        // 1st) move fluids with blocks, that are pushed (so the fluids are safe from displaced fluids)
-        Direction pistonFacingDirection = event.getDirection();
         boolean isExtending = event.getPistonMoveType().isExtend;
+        Direction pistonFacingDirection = event.getDirection();
         Direction moveDirection = isExtending ? pistonFacingDirection : pistonFacingDirection.getOpposite();
-        for (BlockPos oldPos : ps.getToPush()) {
-            FluidState fluidState = world.getFluidState(oldPos);
-            BlockPos newPos = oldPos.relative(moveDirection); // after moving
-            // move fluid without adapting to block, because blocks are moving (Blocks.MOVING_PISTON) and invalid for checks.
-            // adapt,  blockupdate (flag=1) and neighbor check later, when moving block stops moving (PistonTileEntity.finishTick)
-            ((WorldMixinInterface) world).setFluid(oldPos, Fluids.EMPTY.defaultFluidState(), 16 | 2); // remove old
-            ((WorldMixinInterface) world).setFluid(newPos, fluidState, 16 | 2); // add new
+        BlockPos pistonBasePos = event.getPos();
+        BlockPos pistonHeadPos = pistonBasePos.relative(moveDirection);
+        List<BlockPos> destroyed = ps.getToDestroy(); // pos that are destroyed by piston (e.g. flower) -- air does not need to be 'destroyed'
+        List<BlockPos> toPush = ps.getToPush(); // contains pos left empty after push/pull (e.g.  of wooden planks, sticky, ...) => creates air if not push destination
+        List<BlockPos> pushedTo = ps.getToPush().stream().map(p -> p.relative(moveDirection)).collect(Collectors.toList()); // push destinations
+        List<BlockPos> vacated = toPush.stream().filter(pos -> !pushedTo.contains(pos)).collect(Collectors.toList()); // toPush && !pushedTo: left empty after push
+        // TODO if extending => remove pistonhead from vacated
+        // cache old states
+        Set<BlockPos> allModified = new HashSet<>(destroyed);
+        allModified.addAll(toPush);
+        allModified.addAll(pushedTo);
+        Map<BlockPos, FluidState> oldStates = new HashMap<>();
+        for (BlockPos pos : allModified) {
+            oldStates.put(pos, world.getFluidState(pos));
         }
 
-        // 2nd) displace all fluids in pos that will be destroyed (e.g. ladder, fluid block)
-        for (BlockPos pos : ps.getToDestroy()) {
-            FluidState fluidState = world.getFluidState(pos);
-            if (!fluidState.isEmpty()) {
-                BlockPos pistonBasePos = event.getPos();
-                PistonDisplacer displacer = new PistonDisplacer(world, pistonBasePos, pistonFacingDirection, isExtending, fluidState, ps);
-                if (!displacer.tryExecute(pos)) { // if cannot displace fluid
+        // 1st) copy pushed fluids to destination
+        for (BlockPos oldPos : toPush) {
+            BlockPos newPos = oldPos.relative(moveDirection); // after moving
+            ((WorldMixinInterface) world).setFluid(newPos, oldStates.get(oldPos), 16 | 2);
+        }
+
+        // destroy piston head fluids if extending
+        if (isExtending) {
+            ((WorldMixinInterface) world).setFluid(pistonHeadPos, Fluids.EMPTY.defaultFluidState(), 16 | 2);
+        }
+
+        // 2nd) empty vacated pos's (were already copied in 1st)
+        for (BlockPos pos : vacated) {
+            ((WorldMixinInterface) world).setFluid(pos, Fluids.EMPTY.defaultFluidState(), 16 | 2);
+        }
+
+        // collect invalid pos's for displacer: destroyed, pushedTo, piston (implicitly valid: vacated)
+        Set<BlockPos> invalidPosSet = new HashSet<>(destroyed);
+        invalidPosSet.addAll(pushedTo);
+        invalidPosSet.add(pistonBasePos); // piston base pos (never allowed)
+        if (isExtending) { // when extending: piston head not in pushedTo or destroyed, but not valid
+            invalidPosSet.add(pistonHeadPos); // piston head pos (destination)
+            // TODO IDEA: fluidlog piston head? => double pump: need to process extending and retracting separately & set head pos as valid
+        } // when contracting: piston head in pushedTo (sticky/slime = blocked) or becomes empty (=valid) => no handling needed
+
+        // 3rd) displace all fluids in pos that will be destroyed (e.g. ladder, fluid block)
+        for (BlockPos pos : destroyed) {
+            FluidState displacedFS = oldStates.get(pos);
+            if (!displacedFS.isEmpty()) { // not empty => displace levels
+                FlowingFluid fluidToDisplace = (FlowingFluid) displacedFS.getType(); // safe cast because not empty
+                int levelsToDisplace = displacedFS.getAmount();
+                // 1) place as many levels as possible into pushed block (the block which moved into this pos forcing the displacing)
+                FluidState pushedFluidState = world.getFluidState(pos);
+                BlockState pushedBlockState = world.getBlockState(pos.relative(moveDirection.getOpposite())); // pushing not happened yet!!!
+                if (FFluidStatic.canHoldFluid(pushedBlockState) && FFluidStatic.canFlow(world, pos, moveDirection.getOpposite())
+                        && (fluidToDisplace.isSame(pushedFluidState.getType()) || pushedFluidState.isEmpty())) {
+                    Tuple3<Boolean, Integer, FluidState> tuple3 = FFluidStatic.placeLevelsUpTo(pushedFluidState, fluidToDisplace, levelsToDisplace);
+                    Boolean wasPlaced = tuple3.first;
+                    Integer placedLevels = tuple3.second;
+                    FluidState newPushedFluidState = tuple3.third;
+                    if (wasPlaced) { // levels were actually placed
+                        levelsToDisplace -= placedLevels;
+                        FFluidStatic.setFluidAlsoBlock(world, pos, newPushedFluidState); // update pushed block
+                        if (levelsToDisplace == 0) { // everything placed, nothing left to displace
+                            return;
+                        }
+                    }
+                }
+                // 2) displace remaining levels with piston displacer
+                PistonDisplacer displacer = new PistonDisplacer(world, pos, fluidToDisplace, levelsToDisplace, invalidPosSet);
+                if (!displacer.tryExecute()) { // if cannot displace fluid
                     event.setCanceled(true); // do not destroy fluid with piston! (alternatively destroy/void by not canceling)
                     return; // stop checking other pos's
                 }
