@@ -9,7 +9,7 @@ import net.skds.wpo.util.Constants;
 public class Main {
 
     //public final ForgeConfigSpec.BooleanValue slide;
-    public final ForgeConfigSpec.IntValue maxSlideDist, maxEqDist, maxBucketDist;
+    public final ForgeConfigSpec.IntValue maxSlideDist, maxEqDist, maxBucketDist, maxDisplaceDist;
     public final ForgeConfigSpec.DoubleValue fluidTickRateScaling;
 
     // public final ForgeConfigSpec.ConfigValue<ArrayList<String>> ss;
@@ -24,6 +24,9 @@ public class Main {
         maxEqDist = builder.apply("setMaxEqualizeDistance").comment("UwU").defineInRange("setMaxEqualizeDistance", 16, 0, 256);
         maxSlideDist = builder.apply("setMaxSlidingDistance").comment("-_-").defineInRange("setMaxSlidingDistance", 5, 0, 256);
         maxBucketDist = builder.apply("setMaxBucketDistance").comment("^u^").defineInRange("setMaxBucketDistance", 8, 0, Constants.MAX_FLUID_LEVEL);
+        maxDisplaceDist = builder.apply("setMaxDisplaceDistance")
+                .comment("maximum distance over which fluid will be pushed by block placed/falling and pistons")
+                .defineInRange("setMaxDisplaceDistance", 12, 0, 256);
         fluidTickRateScaling = builder.apply("setFluidTickRateScaling")
                 .comment("vanilla tick rate is scaled by this factor (vanilla: water=5, lava=30 (lava=10 in nether)")
                 .defineInRange("setFluidTickRateScaling", 0.5, 0, 2);

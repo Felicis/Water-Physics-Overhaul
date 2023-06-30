@@ -24,7 +24,7 @@ public class LedgeFinder extends AbstractFluidActionIterable<Direction> {
      * @param world
      */
     public LedgeFinder(World world, BlockPos startPos) {
-        super(world, startPos, WPOConfig.COMMON.maxSlideDist.get() + 1); // +1 because iterable has to go down off ledge
+        super(world, startPos, WPOConfig.COMMON.maxSlideDist.get() + 1); // +1 because iterable has to go down after ledge
     }
 
     @Override
@@ -34,24 +34,16 @@ public class LedgeFinder extends AbstractFluidActionIterable<Direction> {
     }
 
     @Override
-    boolean isValidPos(BlockPos pos) {
-        // INFO pos can be higher or lower than startPos, but canFlow was passed
-        if (notHigherThanStartPos(pos)) { // has to be same height or lower
-            BlockState blockState = world.getBlockState(pos);
-            return FFluidStatic.canHoldFluid(blockState); // has to be able to flow through
-            // different fluids could block each other, but they all want to flow to ledge, so ok
-        } else {
-            return false;
-        }
-    }
-
-    private boolean notHigherThanStartPos(BlockPos pos) {
-        return pos.getY() <= startPos.getY();
+    protected List<Direction> getNextDirections() {
+        return FFluidStatic.getDirsDownRandomHorizontal(world.getRandom());  // has to be same height or lower
     }
 
     @Override
-    protected void addInitial(List<BlockPos> posList) {
-        posList.add(startPos);
+    boolean isValidPos(BlockPos pos) {
+        // INFO pos can be lower than startPos, but canFlow was passed
+        BlockState blockState = world.getBlockState(pos);
+        return FFluidStatic.canHoldFluid(blockState); // has to be able to flow through
+        // different fluids could block each other, but they all want to flow to ledge, so ok
     }
 
     @Override

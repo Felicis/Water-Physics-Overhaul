@@ -7,6 +7,7 @@ import net.minecraft.fluid.Fluids;
 import net.minecraft.util.Direction;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
+import net.skds.wpo.WPOConfig;
 import net.skds.wpo.fluidphysics.FFluidStatic;
 import net.skds.wpo.util.tuples.Tuple3;
 
@@ -30,7 +31,7 @@ public class PistonDisplacer extends AbstractFluidActionIterable<Void> {
      * @param invalidPosSet
      */
     public PistonDisplacer(World world, BlockPos startPos, FlowingFluid fluidToDisplace, int levelsToDisplace, Set<BlockPos> invalidPosSet) {
-        super(world, startPos, 12); // TODO add to config for range
+        super(world, startPos, WPOConfig.COMMON.maxDisplaceDist.get());
         this.fluid = fluidToDisplace;
         levelsToPlace = levelsToDisplace;
         this.invalidPosSet = invalidPosSet;
@@ -48,15 +49,8 @@ public class PistonDisplacer extends AbstractFluidActionIterable<Void> {
     }
 
     @Override
-    protected void addInitial(List<BlockPos> posList) {
-        // since current pos will be destroyed by piston, it is not valid initial pos,
-        // therefore use all adjacent pos that are valid and can flow to
-        for (Direction randDir : FFluidStatic.getDirsDownRandomHorizontalUp(world.getRandom())) {
-            BlockPos adjacentPos = startPos.relative(randDir);
-            if (isValidPos(adjacentPos) && FFluidStatic.canFlow(world, startPos, randDir)) {
-                posList.add(adjacentPos);
-            }
-        }
+    protected boolean skipProcessingStartPos() {
+        return true;
     }
 
     @Override

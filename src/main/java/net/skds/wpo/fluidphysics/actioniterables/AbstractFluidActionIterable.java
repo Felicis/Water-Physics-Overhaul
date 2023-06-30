@@ -39,12 +39,21 @@ public abstract class AbstractFluidActionIterable<T> {
     }
 
     /**
-     * given the starting location startPos, populate the starting pos set for the execution
+     * override to skip processing (e.g. fluid displacer skips start position)
      *
-     * @param posList
+     * @return
      */
-    protected void addInitial(List<BlockPos> posList) {
-        posList.add(startPos);
+    protected boolean skipProcessingStartPos() {
+        return false;
+    }
+
+    /**
+     * override for different iterating directions or order (e.g. equalizer only horizontal). default: down, random horizontal, up
+     *
+     * @return
+     */
+    protected List<Direction> getNextDirections() {
+        return FFluidStatic.getDirsDownRandomHorizontalUp(world.getRandom());
     }
 
     /**
@@ -124,17 +133,15 @@ public abstract class AbstractFluidActionIterable<T> {
     }
 
     public boolean tryExecuteWithResultImpl(int flags, int recursion) {
-        // check if execute not needed
+        // check if execute not needed (subclass constructor can set this)
         if (isComplete) {
             return true;
         }
         World world = this.world;
         // pos's for current and next range sweep
         List<BlockPos> currentList = new ArrayList<>();
+        currentList.add(startPos); // TODO assert/check startPos isValid
         List<BlockPos> nextList = new ArrayList<>();
-        // add initial pos's to current (if valid)
-        this.addInitial(currentList);
-        currentList.removeIf(pos -> !this.isValidPos(pos)); // remove invalid pos
         // all visited pos's (visited means pos was reached and checked for validity)
         List<BlockPos> allVisited = new ArrayList<>(currentList);
 
@@ -144,18 +151,20 @@ public abstract class AbstractFluidActionIterable<T> {
                 return false;
             }
             for (BlockPos posCurrent : currentList) {
-                this.process(posCurrent); // process position
-                if (isComplete) { // check if processed enough pos's
-                    return true;
+                if (!(range == 0 && skipProcessingStartPos())) { // if NOT (!) range == 0 and skip start
+                    this.process(posCurrent); // process position
+                    if (isComplete) { // check if processed enough pos's
+                        return true;
+                    }
                 }
                 if (range < maxRange) { // if not max range reached  => generate new pos's
                     // first down, then random sides, then up // TODO for taking maybe up, sides, down?
-                    for (Direction randDir : FFluidStatic.getDirsDownRandomHorizontalUp(world.getRandom())) {
-                        if (FFluidStatic.canFlow(world, posCurrent, randDir)) { // if can flow through blocks in that direction
-                            BlockPos posNew = posCurrent.relative(randDir);
+                    for (Direction nextDir : getNextDirections()) {
+                        if (FFluidStatic.canFlow(world, posCurrent, nextDir)) { // if can flow through blocks in that direction
+                            BlockPos posNew = posCurrent.relative(nextDir);
                             if (!allVisited.contains(posNew)) { // do not visit twice
                                 allVisited.add(posNew);
-                                cacheFlow(posCurrent, posNew); // needs to be before isValidPos
+                                cacheFlow(posCurrent, posNew); // needs to be before isValidPos of TankFiller
                                 if (this.isValidPos(posNew)) { // only consider valid
                                     nextList.add(posNew); // set to visit next
                                 }

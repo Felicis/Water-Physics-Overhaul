@@ -7,6 +7,7 @@ import net.minecraft.fluid.Fluids;
 import net.minecraft.util.Direction;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
+import net.skds.wpo.WPOConfig;
 import net.skds.wpo.fluidphysics.FFluidStatic;
 import net.skds.wpo.util.tuples.Tuple3;
 
@@ -21,7 +22,7 @@ public class FluidDisplacer extends AbstractFluidActionIterable<Void> {
     Map<BlockPos, FluidState> states = new HashMap<>();
 
     public FluidDisplacer(World world, BlockPos startPos, FluidState oldFluidState) {
-        super(world, startPos, 10); // TODO make config: max fluid displace distance?
+        super(world, startPos, WPOConfig.COMMON.maxDisplaceDist.get());
         if (oldFluidState.isEmpty()) {
             isComplete = true; // no fluid to displace
         } else {
@@ -43,15 +44,10 @@ public class FluidDisplacer extends AbstractFluidActionIterable<Void> {
     }
 
     @Override
-    protected void addInitial(List<BlockPos> posList) {
+    protected boolean skipProcessingStartPos() {
         // since current pos should displace, it is not valid initial pos,
         // therefore use all adjacent pos that are valid and can flow to
-        for (Direction randDir : FFluidStatic.getDirsDownRandomHorizontalUp(world.getRandom())) {
-            BlockPos adjacentPos = startPos.relative(randDir);
-            if (isValidPos(adjacentPos) && FFluidStatic.canFlow(world, startPos, randDir)) {
-                posList.add(adjacentPos);
-            }
-        }
+        return true;
     }
 
     @Override
