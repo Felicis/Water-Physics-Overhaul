@@ -25,6 +25,7 @@ public class PistonBlockMixin {
 //        return FFluidStatic.setFluidForBlock(world, pPos, fluidState, pFlags);
 //    }
 
+    // TODO check if making MovingPistonBlock fluidloggable fixes problem more elegenatly?
     @Redirect(method = "moveBlocks", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/World;setBlock(Lnet/minecraft/util/math/BlockPos;Lnet/minecraft/block/BlockState;I)Z"),
             slice = @Slice(from = @At(value = "INVOKE", target = "Ljava/util/Map;keySet()Ljava/util/Set;")))
     private boolean setBlock_AndFluid(World instance, BlockPos pPos, BlockState pNewState, int pFlags) {

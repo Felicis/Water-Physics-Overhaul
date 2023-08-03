@@ -366,7 +366,7 @@ public class FFluidStatic {
             //  - FluidUtil.destroyBlockOnFluidPlacement
             //  - BucketItem.emptyBucket
             return false;
-        } else if (!displaceFluid) { // can not hold fluid and dont displace => destroy fluid
+        } else if (!displaceFluid) { // can NOT hold fluid and DONT displace => destroy fluid
             boolean setBlockSuccess = ((WorldMixinInterface) world).setBlockNoFluid(pos, blockState, flags);
             boolean setFluidSuccess = ((WorldMixinInterface) world).setFluid(pos, Fluids.EMPTY.defaultFluidState(), flags);
             return setBlockSuccess && setFluidSuccess;
@@ -806,23 +806,25 @@ public class FFluidStatic {
 //						 -= placedLevels;
 //					}
             // check how many levels can be placed
-            FlowingFluid aboveFluid = (FlowingFluid) fluidState.getType(); // cast safe, because not empty
-            int aboveLevel = fluidState.getAmount();
-            BlockPos belowPos = pos.relative(successAndFlowDir.second);
-            FluidState belowState = world.getFluidState(belowPos);
-            Tuple3<Boolean, Integer, FluidState> tuple3 = FFluidStatic.placeLevelsUpTo(belowState, aboveFluid, aboveLevel);
-            Boolean wasPlaced = tuple3.first;
-            Integer placedLevels = tuple3.second;
-            FluidState newBelowState = tuple3.third;
-            if (wasPlaced) { // levels were actually placed
-                // update belowPos and abovePos
-                setFluidAlsoBlock(world, belowPos, newBelowState);
-                FluidState newAboveState = FFluidStatic.getSourceOrFlowingOrEmpty(aboveFluid, aboveLevel - placedLevels);
-                setFluidAlsoBlock(world, pos, newAboveState);
-            } // else do nothing
-            // TODO play sound
-            // TODO update fluids recursively up-flow if all moving to ledge? (keep packets together)
-            return true;
+            FlowingFluid fromFluid = (FlowingFluid) fluidState.getType(); // cast safe, because not empty
+            int fromLevel = fluidState.getAmount();
+            BlockPos toPos = pos.relative(successAndFlowDir.second);
+            FluidState toState = world.getFluidState(toPos);
+            if (fromLevel > toState.getAmount()) { // at least one higher => flow downhill
+                Tuple3<Boolean, Integer, FluidState> tuple3 = FFluidStatic.placeLevelsUpTo(toState, fromFluid, fromLevel);
+                Boolean wasPlaced = tuple3.first;
+                Integer placedLevels = tuple3.second;
+                FluidState newToState = tuple3.third;
+                if (wasPlaced) { // levels were actually placed
+                    // update fromPos and toPos
+                    setFluidAlsoBlock(world, toPos, newToState);
+                    FluidState newFromState = FFluidStatic.getSourceOrFlowingOrEmpty(fromFluid, fromLevel - placedLevels);
+                    setFluidAlsoBlock(world, pos, newFromState);
+                } // else do nothing
+                // TODO play sound
+                // TODO update fluids recursively up-flow if all moving to ledge? (keep packets together)
+                return true;
+            }
         }
         return false;
     }

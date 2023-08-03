@@ -1,24 +1,12 @@
 package net.skds.wpo.mixin.blockstate;
 
+import net.minecraft.block.AbstractBlock.AbstractBlockState;
+import net.minecraft.fluid.FluidState;
 import net.skds.wpo.WPO;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
-
-import net.minecraft.block.AbstractBlock.AbstractBlockState;
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.fluid.FluidState;
-import net.minecraft.util.Direction;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.IWorld;
-import net.minecraft.world.World;
-import net.skds.wpo.fluidphysics.FFluidStatic;
-
-import static net.minecraft.state.properties.BlockStateProperties.WATERLOGGED;
-import static net.skds.wpo.registry.BlockStateProps.*;
 
 @Mixin(value = { AbstractBlockState.class })
 public abstract class AbstractBlockStateMixin {
@@ -48,9 +36,9 @@ public abstract class AbstractBlockStateMixin {
 //		FFluidStatic.tryScheduleFluidTick(worldIn, currentPos, state);
 //	}
 
-	private void fixFFLNoWL(IWorld w, BlockState s, BlockPos p) { // TODO remove if state stays stable; else use in mixins
-		if (!s.getValue(WATERLOGGED) && s.getValue(WPO_LEVEL) > 0) {
-			w.setBlock(p, s.setValue(WPO_LEVEL, 0), 3);
-		}
-	}
+//	private void fixFFLNoWL(IWorld w, BlockState s, BlockPos p) { // TODO remove if state stays stable; else use in mixins
+//		if (!s.getValue(WATERLOGGED) && s.getValue(WPO_LEVEL) > 0) {
+//			w.setBlock(p, s.setValue(WPO_LEVEL, 0), 3);
+//		}
+//	}
 }

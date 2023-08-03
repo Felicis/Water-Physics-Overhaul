@@ -18,14 +18,13 @@ import net.minecraft.util.math.shapes.VoxelShapes;
 import net.minecraft.world.IBlockReader;
 import net.minecraft.world.IWorld;
 import net.minecraft.world.World;
-import net.skds.wpo.registry.BlockStateProps;
 import net.skds.wpo.block.tileentity.PipeTileEntity;
 import net.skds.wpo.util.interfaces.IBaseWL;
 
 public class PipeBlock extends Block implements IWaterLoggable, IBaseWL {
 
 	public static final BooleanProperty WATERLOGGED = BlockStateProperties.WATERLOGGED;
-	public static final IntegerProperty FFL = BlockStateProps.WPO_LEVEL;
+	public static final IntegerProperty FFL = BlockStateProperties.LEVEL;
 
 	public PipeBlock(Properties properties) {
 		super(properties);

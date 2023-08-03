@@ -36,6 +36,7 @@ import net.skds.wpo.fluidphysics.actioniterables.PistonDisplacer;
 import net.skds.wpo.fluidphysics.actioniterables.TankFiller;
 import net.skds.wpo.fluidphysics.actioniterables.TankFlusher;
 import net.skds.wpo.item.AdvancedBucket;
+import net.skds.wpo.mixininterfaces.IWorldMixinInterface;
 import net.skds.wpo.mixininterfaces.WorldMixinInterface;
 import net.skds.wpo.util.Constants;
 import net.skds.wpo.util.tuples.Tuple2;
@@ -171,31 +172,25 @@ public class EventStatic {
         return bottleFiller.tryExecute();
     }
 
-    public static void onBlockPlace(BlockEvent.EntityPlaceEvent e) {
-        World world = (World) e.getWorld();
-        BlockPos pos = e.getPos();
-        // get block and fluid (overwrite to change and break)
-        FluidState fluidState = world.getFluidState(pos);
-        BlockState blockState = e.getPlacedBlock();
+    public static void onBlockPlace(BlockEvent.EntityPlaceEvent event) {
+        /* accumulate special cases here (modify FS and BS as needed - consider that setBlock is called later) */
+        /* (if for some reason block placement should not be allowed, cancel event) */
+        World world = (World) event.getWorld();
+        BlockPos pos = event.getPos();
+        BlockState blockState = event.getPlacedBlock();
         Block newBlock = blockState.getBlock();
-        boolean once = true;
-        while (once) { // only to skip other checks easily (like case, but heterogeneous checks)
-            once = false;
-            /* accumulate special cases here (modify FS and BS as needed and break) */
-            if (newBlock instanceof SpongeBlock || newBlock instanceof WetSpongeBlock) {
-                break;
-            }
-            // frost walker replaces water with water (idk why) => delete water (since it is created again from melting ice)
-            // idk when FrostedIceBlock is placed...
-            int frostWalkerLevel = EnchantmentHelper.getEnchantmentLevel(Enchantments.FROST_WALKER, (LivingEntity) e.getEntity());
-            if (newBlock == Blocks.WATER && frostWalkerLevel > 0) {
-                // does not duplicate water, because frostwalker only triggers on source blocks and the ice melts to 8 levels
-                fluidState = Fluids.EMPTY.defaultFluidState(); // remove water (is ice now)
-                break;
-            }
+        // TODO handle sponge block
+        if (newBlock instanceof SpongeBlock || newBlock instanceof WetSpongeBlock) {
+            return;
         }
-        // set block and fluid
-        FFluidStatic.setBlockAndFluid(world, pos, blockState, fluidState, true); // set block and fluid and displace as needed
+        // frost walker replaces water with water (idk why) => delete water (since it is created again from melting ice)
+        // idk when FrostedIceBlock is placed...
+        int frostWalkerLevel = EnchantmentHelper.getEnchantmentLevel(Enchantments.FROST_WALKER, (LivingEntity) event.getEntity());
+        if (newBlock == Blocks.WATER && frostWalkerLevel > 0) {
+            // does not duplicate water, because frostwalker only triggers on source blocks and the ice melts to 8 levels
+            ((WorldMixinInterface) world).setFluid(pos, Fluids.EMPTY.defaultFluidState()); // remove water (is ice now)
+            return;
+        }
         // BlockEvent.EntityPlaceEvent does not have a result
     }
 

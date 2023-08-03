@@ -76,8 +76,8 @@ public class Equalizer extends AbstractFluidActionIterable<Void> {
         if (!states.isEmpty()) { // fluid was moved from start pos => also update start pos state
             FluidState newStartPosFS = FFluidStatic.getSourceOrFlowingOrEmpty(fluid, levelsAtStartPos);
             states.put(startPos, newStartPosFS);
+            multiSetFluid(states, flags, recursion);
         }
-        multiSetFluid(states, flags, recursion);
         return null;
     }
 }
