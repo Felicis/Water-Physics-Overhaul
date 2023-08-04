@@ -10,7 +10,6 @@ import net.minecraft.world.IWorld;
 import net.minecraft.world.World;
 import net.minecraft.world.server.ServerWorld;
 import net.skds.wpo.fluidphysics.FFluidStatic;
-import net.skds.wpo.util.marker.WPOFluidMarker;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -22,12 +21,10 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import java.util.Random;
 
 @Mixin(value = {FlowingFluidBlock.class})
-public abstract class FlowingFluidBlockMixin extends Block implements WPOFluidMarker {
+public abstract class FlowingFluidBlockMixin extends Block {
     @Shadow
     @Final
     private FlowingFluid fluid;
-
-    /**************+ MARKER MIXIN: do not remove this mixing even if empty ****************/
 
     public FlowingFluidBlockMixin(Properties p_i48440_1_) {
         super(p_i48440_1_);

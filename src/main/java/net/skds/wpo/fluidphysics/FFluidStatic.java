@@ -5,7 +5,10 @@ import net.minecraft.block.Blocks;
 import net.minecraft.block.FlowingFluidBlock;
 import net.minecraft.block.SlabBlock;
 import net.minecraft.block.material.Material;
-import net.minecraft.fluid.*;
+import net.minecraft.fluid.FlowingFluid;
+import net.minecraft.fluid.Fluid;
+import net.minecraft.fluid.FluidState;
+import net.minecraft.fluid.Fluids;
 import net.minecraft.particles.ParticleTypes;
 import net.minecraft.state.properties.SlabType;
 import net.minecraft.util.Direction;
@@ -27,7 +30,6 @@ import net.skds.wpo.fluidphysics.actioniterables.FluidDisplacer;
 import net.skds.wpo.fluidphysics.actioniterables.LedgeFinder;
 import net.skds.wpo.mixininterfaces.WorldMixinInterface;
 import net.skds.wpo.util.Constants;
-import net.skds.wpo.util.marker.WPOFluidMarker;
 import net.skds.wpo.util.marker.WPOFluidloggableMarker;
 import net.skds.wpo.util.tuples.Tuple2;
 import net.skds.wpo.util.tuples.Tuple3;
@@ -154,18 +156,16 @@ public class FFluidStatic {
     }
 
     /**
-     * returns true if state is a FluidBlock and is modded by WPO to have custom leveling<br/>
-     * use to check for pure fluid blocks (to be handled by WPO)
+     * returns true if state is a FlowingFluidBlock<br/>
      *
      * @param state
      * @return
      */
     public static boolean isFluidBlock(BlockState state) {
-        return WPOFluidMarker.isWPOFluid(state.getBlock());
+        return state.getBlock() instanceof FlowingFluidBlock; // all fluid blocks are this with different fluid types
     }
 
     /**
-     * returns true if state is a "normal" Block and is modded by WPO to have custom leveling<br/>
      * use to check for fluidloggable blocks (to be handled by WPO)
      *
      * @param state
@@ -181,7 +181,7 @@ public class FFluidStatic {
      * This is the case when:<br/>
      * a) the block is air (can be replaced with fluid)<br/>
      * a) the block is a (pure) fluid block<br/>
-     * b) the block is a "normal" block extended by WPO to be fluidlogged<br/><br/>
+     * b) the block can be fluidlogged<br/><br/>
      * This does not guarantee that there is enough space left in the pos, but it can always be ejected :)
      *
      * @param state
@@ -209,14 +209,24 @@ public class FFluidStatic {
         }
     }
 
+    public static boolean hasWaterloggedProperty(BlockState state) {
+        return state.hasProperty(WATERLOGGED);
+    }
+
     /**
      * getter for WATERLOGGED property (only access through this!)
      *
      * @param state
      * @return
      */
-    public static boolean isFluidlogged(BlockState state) { // TODO check FluidState (add level and pos args)
-        return state.getValue(WATERLOGGED);
+    public static boolean isWaterlogged(BlockState state) { // TODO check FluidState (add level and pos args)
+        if (state.hasProperty(WATERLOGGED)) {
+            return state.getValue(WATERLOGGED);
+        } else {
+            WPO.LOGGER.error("FFluidStatic.isFluidlogged: tried to get WATERLOGGED property of "
+                    + state.getBlock().getRegistryName() + " which does not have this property!", new Throwable());
+            return false;
+        }
     }
 
     /**
@@ -226,8 +236,14 @@ public class FFluidStatic {
      * @param fluidlogged
      * @return
      */
-    public static BlockState setFluidlogged(BlockState state, boolean fluidlogged) { // TODO remove? set fluidState instead
-        return state.setValue(WATERLOGGED, fluidlogged);
+    public static BlockState setWaterlogged(BlockState state, boolean fluidlogged) { // TODO remove? set fluidState instead
+        if (state.hasProperty(WATERLOGGED)) {
+            return state.setValue(WATERLOGGED, fluidlogged);
+        } else {
+            WPO.LOGGER.error("FFluidStatic.setFluidlogged: tried to set WATERLOGGED property of "
+                    + state.getBlock().getRegistryName() + " which does not have this property!", new Throwable());
+            return state;
+        }
     }
 
 //	/**
@@ -326,8 +342,8 @@ public class FFluidStatic {
     private static BlockState updateFromFluidState(BlockState oldBlockState, FluidState newFluidState) {
         if (isAirBlock(oldBlockState) || isFluidBlock(oldBlockState)) { // was air or fluid
             return newFluidState.createLegacyBlock(); // create blockstate from fluid
-        } else if (isFluidloggableBlock(oldBlockState)) {
-            return setFluidlogged(oldBlockState, !newFluidState.isEmpty());
+        } else if (hasWaterloggedProperty(oldBlockState)) {
+            return setWaterlogged(oldBlockState, !newFluidState.isEmpty());
         } else { // other blocks => vanilla behaviour
             return oldBlockState;
         }
@@ -359,7 +375,7 @@ public class FFluidStatic {
             BlockState newBlockState = updateFromFluidState(blockState, fluidState);
             boolean setBlockSuccess = ((WorldMixinInterface) world).setBlockNoFluid(pos, newBlockState, flags);
             boolean setFluidSuccess = ((WorldMixinInterface) world).setFluid(pos, fluidState, flags);
-            return setBlockSuccess && setFluidSuccess;
+            return setBlockSuccess && setFluidSuccess; // TODO: double check this; if block is set but false, no forge events
         } else if (false) {
             // TODO if block should be destroyed on fluid contact:
             //  - World.destroyBlock
@@ -369,13 +385,13 @@ public class FFluidStatic {
         } else if (!displaceFluid) { // can NOT hold fluid and DONT displace => destroy fluid
             boolean setBlockSuccess = ((WorldMixinInterface) world).setBlockNoFluid(pos, blockState, flags);
             boolean setFluidSuccess = ((WorldMixinInterface) world).setFluid(pos, Fluids.EMPTY.defaultFluidState(), flags);
-            return setBlockSuccess && setFluidSuccess;
+            return setBlockSuccess && setFluidSuccess; // TODO: double check this; if block is set but false, no forge events
         } else if (recursion > 0) { // can not hold fluid => try displacing (prevent infinite recursion), then place block
             FluidDisplacer displacer = new FluidDisplacer(world, pos, fluidState);
             // flags = 3 is okay (block and client update + rerender + neighbor changes)
             boolean setFluidSuccess = displacer.tryExecute(3, recursion - 1); // prevent infinite recursion
             boolean setBlockSuccess = ((WorldMixinInterface) world).setBlockNoFluid(pos, blockState, flags); // first displace fluid, then set block
-            return setBlockSuccess && setFluidSuccess;
+            return setBlockSuccess && setFluidSuccess; // TODO: double check this; if block is set but false, no forge events
         } else { // recursion limit reached: error message with stack trace (but no exception)
             WPO.LOGGER.error("FFluidStatic.setBlockAndFluid and FluidDisplacer: reached recursion limit!", new Throwable());
             return false;
@@ -392,10 +408,12 @@ public class FFluidStatic {
 
     public static boolean setBlockAlsoFluid(World world, BlockPos pos, BlockState blockState, boolean displaceFluid, int flags, int recursion) {
         FluidState fluidState = world.getFluidState(pos);
-        if (fluidState.isEmpty()) { // TODO schedule fluid tick for neighbors?
-            boolean setBlockSuccess = ((WorldMixinInterface) world).setBlockNoFluid(pos, blockState, flags, recursion);
-            boolean setFluidSuccess = ((WorldMixinInterface) world).setFluid(pos, Fluids.EMPTY.defaultFluidState(), flags, recursion); // no recursion?
-            return setBlockSuccess && setFluidSuccess;
+        if (isFluidBlock(blockState)) { // if only fluid (block) => create corresponding fluidState and set both
+            // use FlowingFluidBlock.getFluidState(BlockState): auto converts between (block) legacy level and (fluid) true level
+            FluidState fluidState1 = ((FlowingFluidBlock) blockState.getBlock()).getFluidState(blockState);
+            return setBlockAndFluid(world, pos, blockState, fluidState1, false, flags, recursion); // no displace required
+        } else if (fluidState.isEmpty()) { // TODO schedule fluid tick for neighbors?
+            return ((WorldMixinInterface) world).setBlockNoFluid(pos, blockState, flags, recursion);
         } else { // UPGRADE: if setBlock is called with moving but not set again later, call setBlockAndFluid in mixin to adapt to fluid
             if ((flags & BlockFlags.IS_MOVING) != 0) { // if MOVING => setBlock is also called later without MOVING => ignore fluids now
                 return ((WorldMixinInterface) world).setBlockNoFluid(pos, blockState, flags, recursion);

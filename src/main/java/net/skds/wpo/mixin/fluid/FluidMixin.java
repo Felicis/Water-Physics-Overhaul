@@ -2,7 +2,6 @@ package net.skds.wpo.mixin.fluid;
 
 import net.minecraft.fluid.Fluid;
 import net.minecraft.fluid.FluidState;
-import net.minecraft.network.DebugPacketSender;
 import net.minecraft.util.Direction;
 import net.minecraft.util.Util;
 import net.minecraft.util.math.BlockPos;
@@ -13,15 +12,12 @@ import net.minecraftforge.common.extensions.IForgeFluid;
 import net.minecraftforge.registries.ForgeRegistryEntry;
 import net.skds.wpo.fluidphysics.FFluidStatic;
 import net.skds.wpo.mixininterfaces.FluidMixinInterface;
-import net.skds.wpo.util.marker.WPOFluidMarker;
 import org.spongepowered.asm.mixin.Mixin;
 
 import javax.annotation.Nullable;
 
 @Mixin(Fluid.class)
-public abstract class FluidMixin extends ForgeRegistryEntry<Fluid> implements WPOFluidMarker, FluidMixinInterface, IForgeFluid {
-    /**************+ MARKER MIXIN: do not remove this mixing even if empty ****************/
-
+public abstract class FluidMixin extends ForgeRegistryEntry<Fluid> implements FluidMixinInterface, IForgeFluid {
     @Nullable
     private String descriptionId; // copied from Block
 
