@@ -5,7 +5,6 @@
   "target": "@env(DEFAULT)",
   "refmap": "mixins.wpo.refmap.json",
   "compatibilityLevel": "JAVA_8",
-  "plugin": "net.skds.wpo.mixin.WPOMixinConfigPlugin",
   "mixins": [
     "block.other.BeehiveBlockMixin",
     "block.other.BlockMixin",

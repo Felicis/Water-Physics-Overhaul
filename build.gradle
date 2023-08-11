@@ -117,7 +117,7 @@ jar {
     }
 }
 
-//jar.finalizedBy('reobfJar') 
+jar.finalizedBy('reobfJar')
 
 mixin {
     add sourceSets.main, "mixins.${modid}.refmap.json"
