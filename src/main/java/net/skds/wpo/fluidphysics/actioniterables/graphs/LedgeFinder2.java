@@ -1,20 +1,15 @@
-package net.skds.wpo.fluidphysics.actioniterables;
+package net.skds.wpo.fluidphysics.actioniterables.graphs;
 
-import net.minecraft.block.BlockState;
 import net.minecraft.util.Direction;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import net.skds.wpo.WPOConfig;
-import net.skds.wpo.fluidphysics.FFluidStatic;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
-public class LedgeFinder extends AbstractFluidActionIterable<Direction> {
+public class LedgeFinder2 extends AbstractFluidActionIterable2<Direction> {
     BlockPos afterLedgeDropPos;
-
-    Map<BlockPos, BlockPos> backwardsFlowMap = new HashMap<>();
 
     /**
      * finds closest ledge, where fluid can flow one level down (could also be starting pos => direct down flow)<br/>
@@ -23,51 +18,36 @@ public class LedgeFinder extends AbstractFluidActionIterable<Direction> {
      *
      * @param world
      */
-    public LedgeFinder(World world, BlockPos startPos) {
+    public LedgeFinder2(World world, BlockPos startPos) {
         super(world, startPos, WPOConfig.COMMON.maxSlideDist.get() + 1); // +1 because iterable has to go down after ledge
     }
 
     @Override
-    protected void cacheFlow(BlockPos fromPos, BlockPos toPos) {
-        // cache flow backwards
-        backwardsFlowMap.put(toPos, fromPos);
-    }
-
-    @Override
-    protected List<Direction> getNextDirections() {
-        return FFluidStatic.getDirsDownRandomHorizontal(world.getRandom());  // has to be same height or lower (NOT up)
-    }
-
-    @Override
-    boolean isValidPos(BlockPos pos) {
-        // INFO pos can be lower than startPos, but canFlow was passed
-        BlockState blockState = world.getBlockState(pos);
-        return FFluidStatic.canHoldFluid(blockState); // has to be able to flow through
+    boolean shouldContinueFlow(BlockPos pos) {
+        // do not equalize up
+        return pos.getY() <= startPos.getY();
         // different fluids could block each other, but they all want to flow to ledge, so ok
     }
 
     @Override
     void process(BlockPos pos) {
-        // INFO pos can be higher or lower than startPos, but canFlow and isValidPos were passed
-        if (isLowerThanStartPos(pos)) {
+        // if lower than start pos
+        if (pos.getY() < startPos.getY()) {
             // found ledge!!
             afterLedgeDropPos = pos;
             isComplete = true;
         }
     }
 
-    private boolean isLowerThanStartPos(BlockPos pos) {
-        return pos.getY() < startPos.getY();
-    }
-
     @Override
     Direction finishComplete(int flags, int recursion) {
         // follow backwards flow until start position and return starting direction (for flow to reach ledge)
         BlockPos toPos = afterLedgeDropPos;
-        BlockPos fromPos = backwardsFlowMap.get(toPos); // flow backwards (afterLedgeDropPos can not be starting)
+        // step at least once: afterLedgeDropPos can not be starting
+        BlockPos fromPos = flowGraph.predecessors(toPos).iterator().next(); // no cycles => only 1 predecessor
         while (!fromPos.equals(startPos)) {
             toPos = fromPos;
-            fromPos = backwardsFlowMap.get(toPos); // flow backwards
+            fromPos = flowGraph.predecessors(toPos).iterator().next(); // flow backwards
         }
         return getDirection(fromPos, toPos);
     }

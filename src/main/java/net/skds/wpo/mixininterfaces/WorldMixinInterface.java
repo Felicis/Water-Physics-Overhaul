@@ -6,10 +6,13 @@ import net.minecraft.fluid.FluidState;
 import net.minecraft.util.Direction;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.chunk.Chunk;
+import net.skds.wpo.util.FluidFlowCache;
 
 import javax.annotation.Nullable;
 
 public interface WorldMixinInterface extends IWorldWriterMixinInterface {
+    FluidFlowCache getFlowCache(); // maybe move to IWorldMixinInterface...
+
     boolean setBlockNoFluid(BlockPos pPos, BlockState pNewState);
 
     boolean setBlockNoFluid(BlockPos pPos, BlockState pNewState, int pFlags);

@@ -12,6 +12,13 @@ public class Main {
     public final ForgeConfigSpec.IntValue maxSlideDist, maxEqDist, maxBucketDist, maxDisplaceDist;
     public final ForgeConfigSpec.DoubleValue fluidTickRateScaling;
 
+    public int getMaxDist() {
+//        return Integer.max(Integer.max(maxSlideDist.get(), maxEqDist.get()), Integer.max(maxBucketDist.get(), maxDisplaceDist.get()));
+        // not using displace (block place/fall + piston), because they immediately invalidate graph
+        // for displace compute graph on the fly to reduce cache usage
+        return Integer.max(Integer.max(maxSlideDist.get(), maxEqDist.get()), maxBucketDist.get());
+    }
+
     // public final ForgeConfigSpec.ConfigValue<ArrayList<String>> ss;
     // private final ForgeConfigSpec.IntValue maxFluidLevel;
 

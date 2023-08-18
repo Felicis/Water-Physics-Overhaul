@@ -25,17 +25,19 @@ import net.minecraft.world.World;
 import net.minecraftforge.common.util.Constants.BlockFlags;
 import net.skds.wpo.WPO;
 import net.skds.wpo.WPOConfig;
-import net.skds.wpo.fluidphysics.actioniterables.Equalizer;
 import net.skds.wpo.fluidphysics.actioniterables.FluidDisplacer;
-import net.skds.wpo.fluidphysics.actioniterables.LedgeFinder;
+import net.skds.wpo.fluidphysics.actioniterables.graphs.Equalizer2;
+import net.skds.wpo.fluidphysics.actioniterables.graphs.LedgeFinder2;
 import net.skds.wpo.mixininterfaces.WorldMixinInterface;
 import net.skds.wpo.util.Constants;
+import net.skds.wpo.util.FluidFlowCache;
 import net.skds.wpo.util.marker.WPOFluidloggableMarker;
 import net.skds.wpo.util.tuples.Tuple2;
 import net.skds.wpo.util.tuples.Tuple3;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.Random;
 import java.util.stream.Collectors;
 
@@ -708,6 +710,51 @@ public class FFluidStatic {
         }
     }
 
+    public static FluidFlowCache getFlowCache(World world) { // encapsulate mixin casting
+        return ((WorldMixinInterface) world).getFlowCache();
+    }
+
+    /**
+     * invalidate flows and schedule fluid ticks after block update
+     *
+     * @param world
+     * @param pos
+     */
+    public static void notifyFluidsAfterBlockUpdate(World world, BlockPos pos) {
+        // from flows: invalidate this flow & tick all fluids in range (in other flows)
+        List<BlockPos> posesToTick = getFlowCache(world).invalidateFlowTo(pos);
+        for (BlockPos posToTick : posesToTick) {
+            scheduleFluidTick(world, posToTick);
+        }
+        // in 3x3x3 box: tick neighbors of fluids without flow (incl this)
+        tickNeighbors3x3x3(world, pos);
+    }
+
+    /**
+     * schedule fluid ticks after fluid update (flows stay the same, no need to recompute them)
+     *
+     * @param world
+     * @param pos
+     */
+    public static void notifyFluidsAfterFluidUpdate(World world, BlockPos pos) {
+        // from flows: tick all fluids in range
+        for (BlockPos posToTick : getFlowCache(world).getFluidsInRangeOf(pos)) {
+            scheduleFluidTick(world, posToTick);
+        }
+        // in 3x3x3 box: tick neighbors of fluids without flow (incl this)
+        tickNeighbors3x3x3(world, pos);
+    }
+
+    private static void tickNeighbors3x3x3(World world, BlockPos pos) {
+        for (int dx = -1; dx <= 1; dx++) {
+            for (int dy = -1; dy <= 1; dy++) {
+                for (int dz = -1; dz <= 1; dz++) {
+                    scheduleFluidTick(world, pos.offset(dx, dy, dz));
+                }
+            }
+        }
+    }
+
     /**
      * only used by mixin into flowing fluid tick()
      *
@@ -731,7 +778,7 @@ public class FFluidStatic {
                 // find the closest ledge & move towards ledge
 //                if (handleDownhillFlow(world, pos, fluidState))
 //                    return;
-                handleDownhillFlow(world, pos, fluidState);
+                Optional<BlockPos> flowDestination = handleDownhillFlow(world, pos, fluidState);
 
                 // do normal equalization
                 if (handleEqualization(world, pos, fluidState, (FlowingFluid) fluidState.getType())) // safe cast because fluidstate not empty
@@ -811,49 +858,58 @@ public class FFluidStatic {
         return false;
     }
 
-    private static boolean handleDownhillFlow(World world, BlockPos pos, FluidState fluidState) {
-        if (fluidState.isEmpty()) {
-            return false;
+    private static Optional<BlockPos> handleDownhillFlow(World world, BlockPos pos, FluidState fluidState) {
+        if (fluidState.isEmpty()) return Optional.empty();
+
+        // find ledge direction
+        Direction flowDir;
+        // check cache or recompute
+        FluidFlowCache flowCache = getFlowCache(world);
+        Tuple2<Boolean, Direction> cacheHitAndData = flowCache.getDownhillDirection(pos);
+        if (cacheHitAndData.first) { // cache hit => use cached direction
+            flowDir = cacheHitAndData.second;
+        } else { // cache miss => recompute direction
+            LedgeFinder2 ledgeFinder = new LedgeFinder2(world, pos);
+            Tuple2<Boolean, Direction> successAndFlowDir = ledgeFinder.tryExecuteWithResult();
+            flowDir = successAndFlowDir.second;
+            // update cache
+            flowCache.setDownhillDirection(pos, flowDir); // (flowDir == null) => OK: no ledge in range
         }
-        LedgeFinder ledgeFinder = new LedgeFinder(world, pos);
-        Tuple2<Boolean, Direction> successAndFlowDir = ledgeFinder.tryExecuteWithResult();
-        if (successAndFlowDir.first) { // move towards ledge
-//					FluidState fromFluidState = world.getFluidState(pos);
-//					FluidState toFluidState = world.getFluidState(ledgeDirPos);
-//					Tuple3<Boolean, Integer, FluidState> tuple3 = FFluidStatic.placeLevelsUpTo(toFluidState, fromFluidState.getAmount());
-//					Boolean wasPlaced = tuple3.first;
-//					Integer placedLevels = tuple3.second;
-//					FluidState newFluidState = tuple3.third;
-//					if (wasPlaced) { // levels were actually placed
-//						 -= placedLevels;
-//					}
-            // check how many levels can be placed
-            FlowingFluid fromFluid = (FlowingFluid) fluidState.getType(); // cast safe, because not empty
-            int fromLevel = fluidState.getAmount();
-            BlockPos toPos = pos.relative(successAndFlowDir.second);
-            FluidState toState = world.getFluidState(toPos);
+        // if no ledge in range => do nothing
+        if (flowDir == null) return Optional.empty();
+        // move towards ledge
+        FlowingFluid fromFluid = (FlowingFluid) fluidState.getType(); // cast safe, because not empty
+        int fromLevel = fluidState.getAmount();
+        BlockPos toPos = pos.relative(flowDir);
+        FluidState toState = world.getFluidState(toPos);
+        int toLevel = toState.getAmount();
+        int flowingLevels = 0;
+        if (flowDir.getAxis().isHorizontal()) {
             if (fromLevel > toState.getAmount()) { // at least one higher => flow downhill
-                Tuple3<Boolean, Integer, FluidState> tuple3 = FFluidStatic.placeLevelsUpTo(toState, fromFluid, fromLevel);
-                Boolean wasPlaced = tuple3.first;
-                Integer placedLevels = tuple3.second;
-                FluidState newToState = tuple3.third;
-                if (wasPlaced) { // levels were actually placed
-                    // update fromPos and toPos
-                    setFluidAlsoBlock(world, toPos, newToState);
-                    FluidState newFromState = FFluidStatic.getSourceOrFlowingOrEmpty(fromFluid, fromLevel - placedLevels);
-                    setFluidAlsoBlock(world, pos, newFromState);
-                } // else do nothing
-                // TODO play sound
-                // TODO update fluids recursively up-flow if all moving to ledge? (keep packets together)
-                return true;
+                flowingLevels = 1; // send only 1 level per tick
             }
+        } else { // vertical (DOWN) => add all levels
+            flowingLevels = fromLevel;
         }
-        return false;
+        Tuple3<Boolean, Integer, FluidState> tuple3 = FFluidStatic.placeLevelsUpTo(toState, fromFluid, flowingLevels);
+        Boolean wasPlaced = tuple3.first;
+        Integer placedLevels = tuple3.second;
+        FluidState newToState = tuple3.third;
+        if (wasPlaced) { // levels were actually placed
+            // update fromPos and toPos
+            setFluidAlsoBlock(world, toPos, newToState);
+            FluidState newFromState = FFluidStatic.getSourceOrFlowingOrEmpty(fromFluid, fromLevel - placedLevels);
+            setFluidAlsoBlock(world, pos, newFromState);
+            // TODO play sound
+            // TODO update fluids recursively up-flow if all moving to ledge? (keep packets together)
+            return Optional.of(toPos);
+        } // else do nothing
+        return Optional.empty();
     }
 
     private static boolean handleEqualization(World world, BlockPos startPos, FluidState fluidState, FlowingFluid fluid) {
         // TODO get eq flow direction (set) instead of doing it in iterable
-        Equalizer equalizer = new Equalizer(world, startPos, fluid);
+        Equalizer2 equalizer = new Equalizer2(world, startPos, fluid);
         equalizer.tryExecute();
 //        // we assume no ledges nearby
 //        FluidState startFS = world.getFluidState(startPos);
