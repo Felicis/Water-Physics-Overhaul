@@ -1,7 +1,6 @@
 package net.skds.wpo.block.tileentity;
 
 import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
 import net.minecraft.fluid.FlowingFluid;
 import net.minecraft.fluid.Fluid;
 import net.minecraft.fluid.FluidState;
@@ -117,7 +116,7 @@ public class PumpTileEntity extends BasicTankEntity implements IConnectionSides 
 		}
 		// System.out.println(timer);
 
-		if (FFluidStatic.canFlow(level, suckPos, dir.getOpposite())) {
+		if (FFluidStatic.canFlowAndHold(level, suckPos, dir.getOpposite())) {
 			int dl = (500 - am) / 125;
 			int lvl = suckFs.getAmount();
 			dl = lvl >= dl ? dl : lvl;

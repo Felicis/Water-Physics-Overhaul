@@ -209,6 +209,22 @@ public class FFluidStatic {
         }
     }
 
+    public static boolean canFlow(IBlockReader world, BlockPos fromPos, Direction inDirection) {
+        BlockState fromState = world.getBlockState(fromPos);
+        BlockState toState = world.getBlockState(fromPos.relative(inDirection));
+        VoxelShape voxelShape1 = fromState.getCollisionShape(world, fromPos);
+        VoxelShape voxelShape2 = toState.getCollisionShape(world, fromPos.relative(inDirection));
+        if (voxelShape1.isEmpty() && voxelShape2.isEmpty()) {
+            return true;
+        }
+        return !VoxelShapes.mergedFaceOccludes(voxelShape1, voxelShape2, inDirection);
+        // TODO fix with FlowingFluid.canPassThroughWall()
+    }
+
+    public static boolean canFlowAndHold(IBlockReader world, BlockPos fromPos, Direction inDirection) {
+        return canFlow(world, fromPos, inDirection) && canHoldFluid(world.getBlockState(fromPos.relative(inDirection)));
+    }
+
     public static boolean hasWaterloggedProperty(BlockState state) {
         return state.hasProperty(WATERLOGGED);
     }
@@ -583,20 +599,7 @@ public class FFluidStatic {
     // ================ OTHER ================== //
 
     // ================= UTIL ================== //
-    // TODO fix with FlowingFluid.canPassThroughWall()
-    public static boolean canFlow(IBlockReader world, BlockPos fromPos, Direction inDirection) {
-        BlockState state1 = world.getBlockState(fromPos);
-        BlockState state2 = world.getBlockState(fromPos.relative(inDirection));
-        if (state2.canOcclude() && !canHoldFluid(state2)) { // TODO canOcclude?
-            return false;
-        }
-        VoxelShape voxelShape1 = state1.getCollisionShape(world, fromPos);
-        VoxelShape voxelShape2 = state2.getCollisionShape(world, fromPos.relative(inDirection));
-        if (voxelShape1.isEmpty() && voxelShape2.isEmpty()) {
-            return true;
-        }
-        return !VoxelShapes.mergedFaceOccludes(voxelShape1, voxelShape2, inDirection);
-    }
+
 
 //	public static boolean canFlow(IBlockReader w, BlockPos fromPos, BlockPos toPos, BlockState state1, BlockState state2, Fluid fluid) {
 //
@@ -654,7 +657,7 @@ public class FFluidStatic {
 
         FluidState stateu = w.getFluidState(posu);
 
-        if (canFlow(w, pos, Direction.UP) && !stateu.isEmpty()) {
+        if (canFlowAndHold(w, pos, Direction.UP) && !stateu.isEmpty()) {
             level += stateu.getAmount();
             flag = true;
         }
@@ -664,7 +667,7 @@ public class FFluidStatic {
 
             FluidState state2 = w.getFluidState(pos2);
 
-            if (!state2.isEmpty() && canFlow(w, pos, dir)) {
+            if (!state2.isEmpty() && canFlowAndHold(w, pos, dir)) {
                 int lvl2 = state2.getAmount();
                 if (flag) {
                     FluidState fs2u = w.getFluidState(pos2.above());
@@ -773,7 +776,7 @@ public class FFluidStatic {
             boolean hasWaterNeighbor = false;
             for (Direction dir : getDirsDownRandomHorizontalUp(world.random)) {
                 neighborPos = pos.relative(dir);
-                if (canFlow(world, pos, dir) && isWater(world.getFluidState(neighborPos))) {
+                if (canFlowAndHold(world, pos, dir) && isWater(world.getFluidState(neighborPos))) {
                     hasWaterNeighbor = true;
                     break;
                 }

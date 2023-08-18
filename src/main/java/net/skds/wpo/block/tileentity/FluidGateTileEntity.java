@@ -1,8 +1,6 @@
 package net.skds.wpo.block.tileentity;
 
 import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
-import net.minecraft.fluid.FlowingFluid;
 import net.minecraft.fluid.Fluid;
 import net.minecraft.fluid.FluidState;
 import net.minecraft.nbt.CompoundNBT;
@@ -104,7 +102,7 @@ public class FluidGateTileEntity extends BasicTankEntity
 				return;
 			}
 
-			if (FFluidStatic.canFlow(level, worldPosition, dir)) {
+			if (FFluidStatic.canFlowAndHold(level, worldPosition, dir)) {
 				int dl = am / 125;
 				int lvl = flowFs.getAmount();
 				dl = 8 - lvl >= dl ? dl : 8 - lvl;
