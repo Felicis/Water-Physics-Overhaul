@@ -123,7 +123,7 @@ public abstract class AbstractFluidActionIterable<T> {
     }
 
     public Tuple2<Boolean, T> tryExecuteWithResult(int flags, int recursion) {
-        if (tryExecuteWithResultImpl(flags, recursion)) {
+        if (tryExecuteWithResultImpl()) {
             T result = this.finishComplete(flags, recursion);
             return new Tuple2<>(true, result);
         } else {
@@ -132,7 +132,7 @@ public abstract class AbstractFluidActionIterable<T> {
         }
     }
 
-    public boolean tryExecuteWithResultImpl(int flags, int recursion) {
+    private boolean tryExecuteWithResultImpl() {
         // check if execute not needed (subclass constructor can set this)
         if (isComplete) {
             return true;

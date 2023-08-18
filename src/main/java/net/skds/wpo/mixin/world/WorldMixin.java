@@ -77,7 +77,7 @@ public abstract class WorldMixin extends CapabilityProvider<World> implements Wo
      */
     @Override
     public boolean setBlockNoFluid(BlockPos pPos, BlockState pNewState) {
-        return ((World) (Object) this).setBlock(pPos, pNewState, 3, 512);
+        return this.setBlockNoFluid(pPos, pNewState, 3);
     }
 
     /**
@@ -89,7 +89,7 @@ public abstract class WorldMixin extends CapabilityProvider<World> implements Wo
      */
     @Override
     public boolean setBlockNoFluid(BlockPos pPos, BlockState pNewState, int pFlags) {
-        return ((World) (Object) this).setBlock(pPos, pNewState, pFlags, 512);
+        return this.setBlockNoFluid(pPos, pNewState, pFlags, 512);
     }
 
     @Override

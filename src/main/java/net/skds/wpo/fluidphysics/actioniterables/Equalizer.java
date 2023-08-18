@@ -20,8 +20,7 @@ public class Equalizer extends AbstractFluidActionIterable<Void> {
     Map<BlockPos, FluidState> states = new HashMap<>();
 
     public Equalizer(World world, BlockPos startPos, FlowingFluid fluid) {
-        super(world, startPos, 2);  // TODO config
-//        super(world, startPos, WPOConfig.COMMON.maxEqDist.get());
+        super(world, startPos, WPOConfig.COMMON.maxEqDist.get());
         this.fluid = fluid;
         FluidState fluidState = world.getFluidState(startPos);
         levelsAtStartPos = fluidState.getAmount();

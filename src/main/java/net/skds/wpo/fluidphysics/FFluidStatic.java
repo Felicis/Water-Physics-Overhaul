@@ -389,8 +389,8 @@ public class FFluidStatic {
     public static boolean setBlockAndFluid(World world, BlockPos pos, BlockState blockState, FluidState fluidState, boolean displaceFluid, int flags, int recursion) {
         if (canHoldFluid(blockState)) { // can hold fluid => set fluid and (fluid-updated) block
             BlockState newBlockState = updateFromFluidState(blockState, fluidState);
-            boolean setBlockSuccess = ((WorldMixinInterface) world).setBlockNoFluid(pos, newBlockState, flags);
-            boolean setFluidSuccess = ((WorldMixinInterface) world).setFluid(pos, fluidState, flags);
+            boolean setBlockSuccess = ((WorldMixinInterface) world).setBlockNoFluid(pos, newBlockState, flags, recursion);
+            boolean setFluidSuccess = ((WorldMixinInterface) world).setFluid(pos, fluidState, flags, recursion);
             return setBlockSuccess && setFluidSuccess; // TODO: double check this; if block is set but false, no forge events
         } else if (false) {
             // TODO if block should be destroyed on fluid contact:
@@ -399,14 +399,15 @@ public class FFluidStatic {
             //  - BucketItem.emptyBucket
             return false;
         } else if (!displaceFluid) { // can NOT hold fluid and DONT displace => destroy fluid
-            boolean setBlockSuccess = ((WorldMixinInterface) world).setBlockNoFluid(pos, blockState, flags);
-            boolean setFluidSuccess = ((WorldMixinInterface) world).setFluid(pos, Fluids.EMPTY.defaultFluidState(), flags);
+            boolean setBlockSuccess = ((WorldMixinInterface) world).setBlockNoFluid(pos, blockState, flags, recursion);
+            boolean setFluidSuccess = ((WorldMixinInterface) world).setFluid(pos, Fluids.EMPTY.defaultFluidState(), flags, recursion);
             return setBlockSuccess && setFluidSuccess; // TODO: double check this; if block is set but false, no forge events
         } else if (recursion > 0) { // can not hold fluid => try displacing (prevent infinite recursion), then place block
             FluidDisplacer displacer = new FluidDisplacer(world, pos, fluidState);
             // flags = 3 is okay (block and client update + rerender + neighbor changes)
-            boolean setFluidSuccess = displacer.tryExecute(3, recursion - 1); // prevent infinite recursion
-            boolean setBlockSuccess = ((WorldMixinInterface) world).setBlockNoFluid(pos, blockState, flags); // first displace fluid, then set block
+            // TODO why flags = 3 and not pass through?
+            boolean setFluidSuccess = displacer.tryExecute(flags, recursion - 1); // prevent infinite recursion
+            boolean setBlockSuccess = ((WorldMixinInterface) world).setBlockNoFluid(pos, blockState, flags, recursion); // first displace fluid, then set block
             return setBlockSuccess && setFluidSuccess; // TODO: double check this; if block is set but false, no forge events
         } else { // recursion limit reached: error message with stack trace (but no exception)
             WPO.LOGGER.error("FFluidStatic.setBlockAndFluid and FluidDisplacer: reached recursion limit!", new Throwable());
@@ -415,7 +416,7 @@ public class FFluidStatic {
     }
 
     public static boolean setBlockAlsoFluid(World world, BlockPos pos, BlockState blockState, boolean displaceFluid) {
-        return setBlockAlsoFluid(world, pos, blockState, displaceFluid, 3, 512);
+        return setBlockAlsoFluid(world, pos, blockState, displaceFluid, 3);
     }
 
     public static boolean setBlockAlsoFluid(World world, BlockPos pos, BlockState blockState, boolean displaceFluid, int flags) {

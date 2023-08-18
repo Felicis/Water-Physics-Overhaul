@@ -21,7 +21,7 @@ public class Main {
         innerBuilder.push("General");
 
         // slide = builder.apply("setSlide").comment("Will fluids slide down from hills").define("setSlide", true);
-        maxEqDist = builder.apply("setMaxEqualizeDistance").comment("UwU").defineInRange("setMaxEqualizeDistance", 16, 0, 256);
+        maxEqDist = builder.apply("setMaxEqualizeDistance").comment("UwU").defineInRange("setMaxEqualizeDistance", 2, 0, 256);
         maxSlideDist = builder.apply("setMaxSlidingDistance").comment("-_-").defineInRange("setMaxSlidingDistance", 5, 0, 256);
         maxBucketDist = builder.apply("setMaxBucketDistance").comment("^u^").defineInRange("setMaxBucketDistance", 8, 0, Constants.MAX_FLUID_LEVEL);
         maxDisplaceDist = builder.apply("setMaxDisplaceDistance")
