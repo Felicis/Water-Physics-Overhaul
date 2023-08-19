@@ -29,7 +29,7 @@ public class PistonBlockMixin {
     @Redirect(method = "moveBlocks", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/World;setBlock(Lnet/minecraft/util/math/BlockPos;Lnet/minecraft/block/BlockState;I)Z"),
             slice = @Slice(from = @At(value = "INVOKE", target = "Ljava/util/Map;keySet()Ljava/util/Set;")))
     private boolean setBlock_AndFluid(World instance, BlockPos pPos, BlockState pNewState, int pFlags) {
-        // !!!!!!!! adapt to fluids here, because ever though is moving, does not change anymore (vacated by piston movement)
+        // !!!!!!!! adapt to fluids here, because even though is moving, does not change anymore (vacated by piston movement)
         // this means the moving block check in FFluidStatic.setBlockAlsoFluid() will be wrong
         assert pNewState.is(Blocks.AIR); // vacated by piston is set to air => adapt fluids
         FluidState fluidState = instance.getFluidState(pPos);

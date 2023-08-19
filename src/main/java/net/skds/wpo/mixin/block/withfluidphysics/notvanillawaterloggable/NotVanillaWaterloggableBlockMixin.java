@@ -47,7 +47,7 @@ import org.spongepowered.asm.mixin.Mixin;
         AnvilBlock.class,
         RedstoneWireBlock.class, // TODO: destroys water (redstone updates?)
         EndRodBlock.class,
-//        PistonHeadBlock.class, // because we want to be able to push water
+        PistonHeadBlock.class, // pushing fluids is handled in EventStatic.onPistonPre(); this only affects whether it can receive fluids
         CarpetBlock.class,
         AbstractSkullBlock.class, // wall/~, player/witherskel
 //        BrewingStandBlock.class,
@@ -81,7 +81,7 @@ import org.spongepowered.asm.mixin.Mixin;
         BambooBlock.class,
 //        CauldronBlock.class, // TODO: should not break in contact with water
 })
-public abstract class NotVanillaWaterloggableBlockMixin implements IWaterLoggable, WPOFluidloggableMarker {
+public abstract class NotVanillaWaterloggableBlockMixin implements WPOFluidloggableMarker {
     /************+ MARKER MIXIN: do not remove this mixing even if empty ****************/
 }
 

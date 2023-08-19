@@ -39,11 +39,12 @@ public class FlowGraphBuilder {
         World world = this.world;
         // create graph and add starting pos
         MutableGraph<BlockPos> flowGraph = GraphBuilder.directed().allowsSelfLoops(false).build();
-        flowGraph.addNode(startPos);
         // all pos's which block the fluid flow in any way (opaque blocks or blocks constricting flow in some directions)
         Set<BlockPos> borderPoses = new HashSet<>();
-        if (!canHoldFluid(startPos)) { // check for invalid start pos
-            return new Tuple2<>(null, null); // ... maybe return empty graph and list?
+        if (canHoldFluid(startPos)) { // if start pos valid add to graph
+            flowGraph.addNode(startPos);
+        } else { // invalid start pos => return empty graph
+            return new Tuple2<>(flowGraph, borderPoses);
         }
         // pos's for current and next range sweep
         List<BlockPos> currentList = new ArrayList<>();

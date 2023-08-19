@@ -13,9 +13,11 @@ import net.minecraft.item.FishBucketItem;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
+import net.minecraft.particles.ParticleTypes;
 import net.minecraft.stats.Stats;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.util.Direction;
+import net.minecraft.util.SoundCategory;
 import net.minecraft.util.SoundEvent;
 import net.minecraft.util.SoundEvents;
 import net.minecraft.util.math.BlockPos;
@@ -123,6 +125,17 @@ public class EventStatic {
                 // if contains different fluid => abort
                 event.setCanceled(true);
                 return;
+            } else if (world.dimensionType().ultraWarm() && bucketFluid.isSame(Fluids.WATER)) { // no placing water in nether => only play sound
+                int posX = pos.getX();
+                int posY = pos.getY();
+                int posZ = pos.getZ();
+                world.playLocalSound(posX, posY, posZ, SoundEvents.FIRE_EXTINGUISH, SoundCategory.BLOCKS,
+                        0.5F, 2.6F + (world.random.nextFloat() - world.random.nextFloat()) * 0.8F, false);
+
+                for (int _i = 0; _i < 8; ++_i) {
+                    world.addParticle(ParticleTypes.LARGE_SMOKE, posX + Math.random(), posY + Math.random(), posZ + Math.random(),
+                            0.0D, 0.0D, 0.0D);
+                }
             } else { // next block accepts fluid
                 // place fluid
                 // TODO config max levels to place?
@@ -197,21 +210,38 @@ public class EventStatic {
         if (world.isClientSide || event.isCanceled()) { // TODO check: only displace fluids in server (more efficient?)
             return;
         }
-        PistonBlockStructureHelper ps = event.getStructureHelper();
-        if (ps == null || !ps.resolve()) { // check whether piston can move (e.g. not blocked by obsidian)
-            return;
-        }
 
         boolean isExtending = event.getPistonMoveType().isExtend;
         Direction pistonFacingDirection = event.getDirection();
         Direction moveDirection = isExtending ? pistonFacingDirection : pistonFacingDirection.getOpposite();
         BlockPos pistonBasePos = event.getPos();
-        BlockPos pistonHeadPos = pistonBasePos.relative(moveDirection);
+        BlockPos pistonHeadPos = pistonBasePos.relative(pistonFacingDirection);
+
+        PistonBlockStructureHelper ps = event.getStructureHelper();
+        if (ps == null) return;
+        // adapt to weird PistonBlockStructureHelper bug:
+        // when retracting it does not resolve() at time of forge PistonPre hook
+        // it only resolves if the piston head is replaced with air (piston base has to be replaced with moving-piston, otherwise it drops)
+        // => see: PistonBlock.triggerEvent() and PistonBlock.moveBlocks()
+        BlockState pistonBaseBS = world.getBlockState(pistonBasePos);
+        BlockState pistonHeadBS = world.getBlockState(pistonHeadPos);
+        if (!isExtending) {
+            world.setBlock(pistonBasePos, Blocks.MOVING_PISTON.defaultBlockState(), 20);
+            world.setBlock(pistonHeadPos, Blocks.AIR.defaultBlockState(), 20);
+        }
+        if (!ps.resolve()) { // check whether piston can move (e.g. not blocked by obsidian)
+            return;
+        }
+        if (!isExtending) {
+            world.setBlock(pistonBasePos, pistonBaseBS, 20);
+            world.setBlock(pistonHeadPos, pistonHeadBS, 20);
+        }
+
         List<BlockPos> destroyed = ps.getToDestroy(); // pos that are destroyed by piston (e.g. flower) -- air does not need to be 'destroyed'
         List<BlockPos> toPush = ps.getToPush(); // contains pos left empty after push/pull (e.g.  of wooden planks, sticky, ...) => creates air if not push destination
         List<BlockPos> pushedTo = ps.getToPush().stream().map(p -> p.relative(moveDirection)).collect(Collectors.toList()); // push destinations
         List<BlockPos> vacated = toPush.stream().filter(pos -> !pushedTo.contains(pos)).collect(Collectors.toList()); // toPush && !pushedTo: left empty after push
-        // TODO if extending => remove pistonhead from vacated
+
         // cache old states
         Set<BlockPos> allModified = new HashSet<>(destroyed);
         allModified.addAll(toPush);
@@ -230,7 +260,7 @@ public class EventStatic {
         // destroy piston head fluids if extending
         if (isExtending) {
             ((WorldMixinInterface) world).setFluid(pistonHeadPos, Fluids.EMPTY.defaultFluidState(), 16 | 2);
-        }
+        } // if retracting piston head is already in destroyed list
 
         // 2nd) empty vacated pos's (were already copied in 1st)
         for (BlockPos pos : vacated) {
@@ -241,10 +271,6 @@ public class EventStatic {
         Set<BlockPos> invalidPosSet = new HashSet<>(destroyed);
         invalidPosSet.addAll(pushedTo);
         invalidPosSet.add(pistonBasePos); // piston base pos (never allowed)
-        if (isExtending) { // when extending: piston head not in pushedTo or destroyed, but not valid
-            invalidPosSet.add(pistonHeadPos); // piston head pos (destination)
-            // TODO IDEA: fluidlog piston head? => double pump: need to process extending and retracting separately & set head pos as valid
-        } // when contracting: piston head in pushedTo (sticky/slime = blocked) or becomes empty (=valid) => no handling needed
 
         // 3rd) displace all fluids in pos that will be destroyed (e.g. ladder, fluid block)
         for (BlockPos pos : destroyed) {

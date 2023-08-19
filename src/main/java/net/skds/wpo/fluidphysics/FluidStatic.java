@@ -763,59 +763,23 @@ public class FluidStatic {
     public static void tickFlowingFluid(World world, BlockPos pos, FluidState fluidState) {
         if (!fluidState.isEmpty()) { // if empty, skip ticking
             if (!world.isClientSide) { // only on server
-                // TODO if changing from other pos (update neighbors et al) => do not tick (check hasScheduledTick?)
-
-//                // no placing water in nether
-//                if (handleUltraWarmDimensions(world, pos, fluidState))
-//                    return;
-//
 //                // fluid mixing
 //                if (handleFluidMixing(world, pos, fluidState))
 //                    return;
 //
                 // find the closest ledge & move towards ledge
-//                if (handleDownhillFlow(world, pos, fluidState))
-//                    return;
                 Optional<BlockPos> flowDestination = handleDownhillFlow(world, pos, fluidState);
 
                 // do normal equalization
-//                if (flowDestination.isPresent()) { // equalize that pos (instead of pos)
-//                    pos = flowDestination.get();
-//                    fluidState = world.getFluidState(pos);
-//                }
                 if (handleEqualization(world, pos, fluidState, (FlowingFluid) fluidState.getType())) // safe cast because fluidstate not empty
                     return; // TODO: move before downhill check and also flow downhill
 
-                // TODO check FFluidDefault/Basic/EQ
-                // TODO (make action iterable?)
-                // nop // TODO fix
-////				1) only **send** fluid to neighbors (always 1 packet?) - receive from ticking neighbors with higher level
-////				2) schedule tick for all neighbors if changed
-////				3) if ledge: only send fluid towards ledge?
-////				4) .... looks good?
                 // TODO when flow triggered here call World.playLocalSound() -> ClientWorld.playLocalSound()... nop on server
                 // make water/lava (forge fluid?) sounds when packets move (mixin to ClientWorld.setFluid?)
 //			pLevel.playLocalSound((double)pPos.getX() + 0.5D, (double)pPos.getY() + 0.5D, (double)pPos.getZ() + 0.5D, SoundEvents.WATER_AMBIENT, SoundCategory.BLOCKS, pRandom.nextFloat() * 0.25F + 0.75F, pRandom.nextFloat() + 0.5F, false);
 //			pLevel.playLocalSound((double)pPos.getX(), (double)pPos.getY(), (double)pPos.getZ(), SoundEvents.LAVA_AMBIENT, SoundCategory.BLOCKS, 0.2F + pRandom.nextFloat() * 0.2F, 0.9F + pRandom.nextFloat() * 0.15F, false);
             }
         }
-    }
-
-    private static boolean handleUltraWarmDimensions(World world, BlockPos pos, FluidState fluidState) {
-        if (world.dimensionType().ultraWarm() && isWater(fluidState)) {
-            int posX = pos.getX();
-            int posY = pos.getY();
-            int posZ = pos.getZ();
-            world.playLocalSound(posX, posY, posZ, SoundEvents.FIRE_EXTINGUISH, SoundCategory.BLOCKS,
-                    0.5F, 2.6F + (world.random.nextFloat() - world.random.nextFloat()) * 0.8F, false);
-
-            for (int _i = 0; _i < 8; ++_i) {
-                world.addParticle(ParticleTypes.LARGE_SMOKE, posX + Math.random(), posY + Math.random(), posZ + Math.random(),
-                        0.0D, 0.0D, 0.0D);
-            }
-            return true;
-        }
-        return false;
     }
 
     private static boolean handleFluidMixing(World world, BlockPos pos, FluidState fluidState) {
@@ -940,7 +904,7 @@ public class FluidStatic {
         return false;
     }
 
-    private static boolean isWater(FluidState fluidState) {
+    static boolean isWater(FluidState fluidState) {
         return fluidState.getType().isSame(Fluids.WATER) || fluidState.getType().isSame(Fluids.FLOWING_WATER);
     }
 
