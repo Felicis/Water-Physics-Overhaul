@@ -43,7 +43,7 @@ import net.skds.wpo.util.tuples.Tuple3;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static net.skds.wpo.registry.Items.ADVANCED_BUCKET;
+import static net.skds.wpo.registry.WPO_Items.ADVANCED_BUCKET;
 
 public class EventStatic {
     public static void onBucketEvent(FillBucketEvent event) {

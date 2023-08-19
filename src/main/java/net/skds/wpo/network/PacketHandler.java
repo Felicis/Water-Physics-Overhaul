@@ -27,8 +27,6 @@ public class PacketHandler {
 
 	public static void init() {
 		int id = 0;
-		CHANNEL.registerMessage(id++, DebugPacket.class, DebugPacket::encoder, DebugPacket::decoder, DebugPacket::handle);
-		CHANNEL.registerMessage(id++, PipeUpdatePacket.class, PipeUpdatePacket::encoder, PipeUpdatePacket::decoder, PipeUpdatePacket::handle);
 		// packets needed to send fluid state updates from SERVER to ClIENT
 		CHANNEL.registerMessage(id++, SChangeFluidPacket.class, SChangeFluidPacket::encode, SChangeFluidPacket::decode, SChangeFluidPacket::handle);
 		CHANNEL.registerMessage(id++, SMultiFluidChangePacket.class, SMultiFluidChangePacket::encode, SMultiFluidChangePacket::decode, SMultiFluidChangePacket::handle);

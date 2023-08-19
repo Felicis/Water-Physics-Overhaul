@@ -1,9 +1,5 @@
 package net.skds.wpo.item;
 
-import java.util.List;
-
-import javax.annotation.Nullable;
-
 import net.minecraft.client.util.ITooltipFlag;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.fluid.Fluid;
@@ -25,8 +21,10 @@ import net.minecraftforge.common.capabilities.ICapabilityProvider;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.templates.FluidHandlerItemStack;
-import net.skds.wpo.client.models.ISTER;
 import net.skds.wpo.fluidphysics.Constants;
+
+import javax.annotation.Nullable;
+import java.util.List;
 
 public class AdvancedBucket extends BucketItem implements ICapabilityProvider {
 
@@ -38,7 +36,7 @@ public class AdvancedBucket extends BucketItem implements ICapabilityProvider {
 
 	public static AdvancedBucket getBucketForReg(Fluid fluid) {
 		Properties prop = new Properties().stacksTo(fluid == Fluids.EMPTY ? 16 : 1)
-				.defaultDurability(Constants.MAX_FLUID_LEVEL).setNoRepair().setISTER(() -> ISTER.call());
+				.defaultDurability(Constants.MAX_FLUID_LEVEL).setNoRepair();
 		return new AdvancedBucket(fluid, prop);
 	}
 

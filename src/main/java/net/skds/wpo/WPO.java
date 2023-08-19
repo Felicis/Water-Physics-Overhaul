@@ -8,9 +8,9 @@ import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.skds.wpo.client.ClientEvents;
 import net.skds.wpo.config.WPOConfig;
 import net.skds.wpo.network.PacketHandler;
-import net.skds.wpo.registry.Entities;
-import net.skds.wpo.registry.FBlocks;
-import net.skds.wpo.registry.Items;
+import net.skds.wpo.registry.WPO_Entities;
+import net.skds.wpo.registry.WPO_Blocks;
+import net.skds.wpo.registry.WPO_Items;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -34,9 +34,9 @@ public class WPO
         MinecraftForge.EVENT_BUS.register(this);
       
         WPOConfig.init();
-        Items.register();
-        FBlocks.register();
-        Entities.register();
+        WPO_Items.register();
+        WPO_Blocks.register();
+        WPO_Entities.register();
         PacketHandler.init();
     }
     
