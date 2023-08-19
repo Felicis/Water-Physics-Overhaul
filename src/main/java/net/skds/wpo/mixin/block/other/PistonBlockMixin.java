@@ -6,7 +6,7 @@ import net.minecraft.block.PistonBlock;
 import net.minecraft.fluid.FluidState;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
-import net.skds.wpo.fluidphysics.FFluidStatic;
+import net.skds.wpo.fluidphysics.FluidStatic;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
@@ -33,6 +33,6 @@ public class PistonBlockMixin {
         // this means the moving block check in FFluidStatic.setBlockAlsoFluid() will be wrong
         assert pNewState.is(Blocks.AIR); // vacated by piston is set to air => adapt fluids
         FluidState fluidState = instance.getFluidState(pPos);
-        return FFluidStatic.setBlockAndFluid(instance, pPos, pNewState, fluidState, false, pFlags); // displacing not necessary, because setting to air
+        return FluidStatic.setBlockAndFluid(instance, pPos, pNewState, fluidState, false, pFlags); // displacing not necessary, because setting to air
     }
 }

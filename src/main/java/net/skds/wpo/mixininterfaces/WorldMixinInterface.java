@@ -6,7 +6,7 @@ import net.minecraft.fluid.FluidState;
 import net.minecraft.util.Direction;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.chunk.Chunk;
-import net.skds.wpo.util.FluidFlowCache;
+import net.skds.wpo.fluidphysics.FluidFlowCache;
 
 import javax.annotation.Nullable;
 

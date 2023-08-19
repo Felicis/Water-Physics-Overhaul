@@ -4,7 +4,7 @@ import net.minecraft.block.BlockState;
 import net.minecraft.block.LeavesBlock;
 import net.minecraft.util.IStringSerializable;
 import net.minecraft.world.gen.Heightmap;
-import net.skds.wpo.fluidphysics.FFluidStatic;
+import net.skds.wpo.fluidphysics.FluidStatic;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Mutable;
@@ -48,9 +48,9 @@ public abstract class Heightmap_TypeMixin implements IStringSerializable {
         //  - (waterlogged) cloth decorations
         if ("MOTION_BLOCKING".equals(this.serializationKey)) {
             this.isOpaque = blockState -> (blockState.getMaterial().blocksMotion()
-                    || !FFluidStatic.getDefaultFluidState(blockState).isEmpty()) && !(blockState.getBlock() instanceof LeavesBlock);
+                    || !FluidStatic.getDefaultFluidState(blockState).isEmpty()) && !(blockState.getBlock() instanceof LeavesBlock);
         } else if ("MOTION_BLOCKING_NO_LEAVES".equals(this.serializationKey)) {
-            this.isOpaque = blockState -> blockState.getMaterial().blocksMotion() || !FFluidStatic.getDefaultFluidState(blockState).isEmpty();
+            this.isOpaque = blockState -> blockState.getMaterial().blocksMotion() || !FluidStatic.getDefaultFluidState(blockState).isEmpty();
         }
     }
 }

@@ -1,18 +1,7 @@
 package net.skds.wpo.mixin.block.withfluidphysics.vanillawaterloggable;
 
-import net.minecraft.block.BlockState;
 import net.minecraft.block.SlabBlock;
-import net.minecraft.item.BlockItemUseContext;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
-import net.minecraft.world.server.ServerWorld;
-import net.skds.wpo.fluidphysics.FFluidStatic;
-import net.skds.wpo.fluidphysics.actioniterables.FluidDisplacer;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.Slice;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(SlabBlock.class)
 public class SlabBlockMixin {

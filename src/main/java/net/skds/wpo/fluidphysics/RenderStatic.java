@@ -12,7 +12,6 @@ import net.minecraft.util.math.RayTraceContext;
 import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.world.IBlockReader;
 import net.minecraft.world.World;
-import net.skds.wpo.util.Constants;
 
 public class RenderStatic {
     public static float getHeight(int level) {
@@ -51,7 +50,7 @@ public class RenderStatic {
         BlockState statu = w.getBlockState(posu);
         FluidState ufs = w.getFluidState(posu);
 
-        boolean posus = FFluidStatic.canFlowAndHold(w, pos, Direction.UP);
+        boolean posus = FluidStatic.canFlowAndHold(w, pos, Direction.UP);
 
         if (fluid.isSame(ufs.getType()) && posus) {
             return new float[] { 1.0F, 1.0F, 1.0F, 1.0F };
@@ -78,14 +77,14 @@ public class RenderStatic {
             BlockPos pos2 = pos.relative(dir);
             FluidState state2 = w.getFluidState(pos2);
 
-            boolean reach2 = FFluidStatic.canFlowAndHold(w, pos, dir);
+            boolean reach2 = FluidStatic.canFlowAndHold(w, pos, dir);
             boolean same2 = state2.getType().isSame(fluid);
             if (same2 && reach2) {
 
                 BlockPos pos2u = pos2.above();
                 FluidState state2u = w.getFluidState(pos2u);
                 if (state2u.getType().isSame(fluid)
-                        && FFluidStatic.canFlowAndHold(w, pos2, Direction.UP)) {
+                        && FluidStatic.canFlowAndHold(w, pos2, Direction.UP)) {
                     conner[n] = true;
                     conner[n2] = true;
                     setconner[n] = true;
@@ -112,14 +111,14 @@ public class RenderStatic {
                     }
                     BlockPos pos2dir = pos2.relative(dirside[i]);
                     FluidState state2dir = w.getFluidState(pos2dir);
-                    if (FFluidStatic.canFlowAndHold(w, pos2, dirside[i])) {
+                    if (FluidStatic.canFlowAndHold(w, pos2, dirside[i])) {
 
                         if (state2dir.getType().isSame(fluid)) {
 
                             BlockPos pos2diru = pos2dir.above();
                             FluidState state2diru = w.getFluidState(pos2diru);
                             if (state2diru.getType().isSame(fluid)
-                                    && FFluidStatic.canFlowAndHold(w, pos2dir, Direction.UP)) {
+                                    && FluidStatic.canFlowAndHold(w, pos2dir, Direction.UP)) {
                                 if (i == 0) {
                                     setconnervl[n2] = offset2;
                                     setconner[n2] = true;
@@ -146,7 +145,7 @@ public class RenderStatic {
                             BlockPos pos2dird = pos2dir.below();
                             FluidState state2dird = w.getFluidState(pos2dird);
                             if (state2dird.getType().isSame(fluid)
-                                    && FFluidStatic.canFlowAndHold(w, pos2dir, Direction.DOWN)) {
+                                    && FluidStatic.canFlowAndHold(w, pos2dir, Direction.DOWN)) {
                                 if (i == 0) {
                                     if (!setconner[n2])
                                         setconnervl[n2] = offset;
@@ -168,7 +167,7 @@ public class RenderStatic {
                     BlockPos pos2d = pos2.below();
                     FluidState state2d = w.getFluidState(pos2d);
                     if (state2d.getType().isSame(fluid)
-                            && FFluidStatic.canFlowAndHold(w, pos2, Direction.DOWN)) {
+                            && FluidStatic.canFlowAndHold(w, pos2, Direction.DOWN)) {
                         if (!setconner[n]) {
                             setconner[n] = true;
                             setconnervl[n] = offset;

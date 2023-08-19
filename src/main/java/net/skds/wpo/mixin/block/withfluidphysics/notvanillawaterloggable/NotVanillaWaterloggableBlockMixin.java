@@ -1,7 +1,7 @@
 package net.skds.wpo.mixin.block.withfluidphysics.notvanillawaterloggable;
 
 import net.minecraft.block.*;
-import net.skds.wpo.util.marker.WPOFluidloggableMarker;
+import net.skds.wpo.util.WPOFluidloggableMarker;
 import org.spongepowered.asm.mixin.Mixin;
 
 @Mixin({

@@ -13,10 +13,10 @@ import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandler;
-import net.skds.wpo.fluidphysics.FFluidStatic;
+import net.skds.wpo.fluidphysics.FluidStatic;
 import net.skds.wpo.registry.Entities;
 import net.skds.wpo.registry.FBlocks;
-import net.skds.wpo.util.api.IConnectionSides;
+import net.skds.wpo.api.IConnectionSides;
 
 public class FluidGateTileEntity extends BasicTankEntity
 		implements IConnectionSides {
@@ -102,7 +102,7 @@ public class FluidGateTileEntity extends BasicTankEntity
 				return;
 			}
 
-			if (FFluidStatic.canFlowAndHold(level, worldPosition, dir)) {
+			if (FluidStatic.canFlowAndHold(level, worldPosition, dir)) {
 				int dl = am / 125;
 				int lvl = flowFs.getAmount();
 				dl = 8 - lvl >= dl ? dl : 8 - lvl;

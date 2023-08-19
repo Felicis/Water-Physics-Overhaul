@@ -14,10 +14,10 @@ import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandler;
-import net.skds.wpo.fluidphysics.FFluidStatic;
+import net.skds.wpo.fluidphysics.FluidStatic;
 import net.skds.wpo.registry.Entities;
 import net.skds.wpo.registry.FBlocks;
-import net.skds.wpo.util.api.IConnectionSides;
+import net.skds.wpo.api.IConnectionSides;
 
 public class PumpTileEntity extends BasicTankEntity implements IConnectionSides {
 
@@ -116,7 +116,7 @@ public class PumpTileEntity extends BasicTankEntity implements IConnectionSides 
 		}
 		// System.out.println(timer);
 
-		if (FFluidStatic.canFlowAndHold(level, suckPos, dir.getOpposite())) {
+		if (FluidStatic.canFlowAndHold(level, suckPos, dir.getOpposite())) {
 			int dl = (500 - am) / 125;
 			int lvl = suckFs.getAmount();
 			dl = lvl >= dl ? dl : lvl;

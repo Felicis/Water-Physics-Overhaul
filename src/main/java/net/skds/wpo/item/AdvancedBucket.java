@@ -26,7 +26,7 @@ import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.templates.FluidHandlerItemStack;
 import net.skds.wpo.client.models.ISTER;
-import net.skds.wpo.util.Constants;
+import net.skds.wpo.fluidphysics.Constants;
 
 public class AdvancedBucket extends BucketItem implements ICapabilityProvider {
 

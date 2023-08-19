@@ -12,7 +12,7 @@ import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.skds.wpo.registry.Entities;
 import net.skds.wpo.registry.FBlocks;
-import net.skds.wpo.util.api.IConnectionSides;
+import net.skds.wpo.api.IConnectionSides;
 
 public class PipePumpTileEntity extends BasicTankEntity implements IConnectionSides {
 

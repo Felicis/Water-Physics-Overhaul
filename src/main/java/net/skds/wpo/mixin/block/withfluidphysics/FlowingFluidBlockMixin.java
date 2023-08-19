@@ -9,7 +9,7 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.IWorld;
 import net.minecraft.world.World;
 import net.minecraft.world.server.ServerWorld;
-import net.skds.wpo.fluidphysics.FFluidStatic;
+import net.skds.wpo.fluidphysics.FluidStatic;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -69,8 +69,8 @@ public abstract class FlowingFluidBlockMixin extends Block {
         // TODO sync with FluidMixin
         // UPGRADE: copied from FlowingFluidBlock.updateShape with changes
         // change: do not check source, check canFlow and canHoldFluid
-        if (FFluidStatic.canFlow(pLevel, pCurrentPos, pFacing) && FFluidStatic.canHoldFluid(pFacingState)) {
-            FFluidStatic.scheduleFluidTick(pLevel, pCurrentPos);
+        if (FluidStatic.canFlow(pLevel, pCurrentPos, pFacing) && FluidStatic.canHoldFluid(pFacingState)) {
+            FluidStatic.scheduleFluidTick(pLevel, pCurrentPos);
         }
         cir.setReturnValue(super.updateShape(pState, pFacing, pFacingState, pLevel, pCurrentPos, pFacingPos));
     }
@@ -81,7 +81,7 @@ public abstract class FlowingFluidBlockMixin extends Block {
     @Inject(method = "neighborChanged", at = @At(value = "HEAD"), cancellable = true)
     private void neighborChangedM(BlockState pState, World pLevel, BlockPos pPos, Block pBlock, BlockPos pFromPos, boolean pIsMoving, CallbackInfo ci) {
         // TODO sync with FluidMixin
-        FFluidStatic.scheduleFluidTick(pLevel, pPos);
+        FluidStatic.scheduleFluidTick(pLevel, pPos);
         ci.cancel();
     }
 }

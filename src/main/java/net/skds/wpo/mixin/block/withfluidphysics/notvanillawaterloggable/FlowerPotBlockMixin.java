@@ -1,14 +1,7 @@
 package net.skds.wpo.mixin.block.withfluidphysics.notvanillawaterloggable;
 
-import net.minecraft.block.BlockState;
 import net.minecraft.block.FlowerPotBlock;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
-import net.minecraft.world.server.ServerWorld;
-import net.skds.wpo.fluidphysics.FFluidStatic;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Redirect;
 
 @Mixin(FlowerPotBlock.class)
 public class FlowerPotBlockMixin {

@@ -10,7 +10,7 @@ import net.minecraft.util.palette.IdentityPalette;
 import net.minecraft.util.palette.PalettedContainer;
 import net.minecraft.world.chunk.ChunkSection;
 import net.skds.wpo.mixininterfaces.ChunkSectionMixinInterface;
-import net.skds.wpo.util.nbt.NBTUtilFluidState;
+import net.skds.wpo.nbt.NBTUtilFluidState;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;

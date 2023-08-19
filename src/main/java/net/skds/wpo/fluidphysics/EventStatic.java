@@ -31,13 +31,12 @@ import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandlerItem;
-import net.skds.wpo.fluidphysics.actioniterables.BottleFiller;
-import net.skds.wpo.fluidphysics.actioniterables.PistonDisplacer;
-import net.skds.wpo.fluidphysics.actioniterables.TankFiller;
-import net.skds.wpo.fluidphysics.actioniterables.TankFlusher;
+import net.skds.wpo.fluidphysics.flowiterators.BottleFiller;
+import net.skds.wpo.fluidphysics.flowiterators.PistonDisplacer;
+import net.skds.wpo.fluidphysics.flowiterators.TankFiller;
+import net.skds.wpo.fluidphysics.flowiterators.TankFlusher;
 import net.skds.wpo.item.AdvancedBucket;
 import net.skds.wpo.mixininterfaces.WorldMixinInterface;
-import net.skds.wpo.util.Constants;
 import net.skds.wpo.util.tuples.Tuple2;
 import net.skds.wpo.util.tuples.Tuple3;
 
@@ -109,13 +108,13 @@ public class EventStatic {
             }
         } else { // PLACE (bucket contains fluid)
             // if block cannot accept fluid => try next block towards player (e.g. place water against wall)
-            if (!FFluidStatic.canHoldFluid(blockState)) {
+            if (!FluidStatic.canHoldFluid(blockState)) {
                 pos = pos.relative(targ.getDirection()); // update pos
                 blockState = world.getBlockState(pos);
                 fluidState = world.getFluidState(pos);
                 fluidAtPos = fluidState.getType();
                 // if next block does not work either => abort
-                if (!FFluidStatic.canHoldFluid(blockState)) {
+                if (!FluidStatic.canHoldFluid(blockState)) {
                     event.setCanceled(true);
                     return;
                 }
@@ -256,15 +255,15 @@ public class EventStatic {
                 // 1) place as many levels as possible into pushed block (the block which moved into this pos forcing the displacing)
                 FluidState pushedFluidState = world.getFluidState(pos);
                 BlockState pushedBlockState = world.getBlockState(pos.relative(moveDirection.getOpposite())); // pushing not happened yet!!!
-                if (FFluidStatic.canHoldFluid(pushedBlockState) && FFluidStatic.canFlow(world, pos, moveDirection.getOpposite())
+                if (FluidStatic.canHoldFluid(pushedBlockState) && FluidStatic.canFlow(world, pos, moveDirection.getOpposite())
                         && (fluidToDisplace.isSame(pushedFluidState.getType()) || pushedFluidState.isEmpty())) {
-                    Tuple3<Boolean, Integer, FluidState> tuple3 = FFluidStatic.placeLevelsUpTo(pushedFluidState, fluidToDisplace, levelsToDisplace);
+                    Tuple3<Boolean, Integer, FluidState> tuple3 = FluidStatic.placeLevelsUpTo(pushedFluidState, fluidToDisplace, levelsToDisplace);
                     Boolean wasPlaced = tuple3.first;
                     Integer placedLevels = tuple3.second;
                     FluidState newPushedFluidState = tuple3.third;
                     if (wasPlaced) { // levels were actually placed
                         levelsToDisplace -= placedLevels;
-                        FFluidStatic.setFluidAlsoBlock(world, pos, newPushedFluidState); // update pushed block
+                        FluidStatic.setFluidAlsoBlock(world, pos, newPushedFluidState); // update pushed block
                         if (levelsToDisplace == 0) { // everything placed, nothing left to displace
                             return;
                         }

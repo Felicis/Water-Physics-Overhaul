@@ -6,7 +6,7 @@ import net.minecraft.fluid.WaterFluid;
 import net.minecraft.particles.ParticleTypes;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
-import net.skds.wpo.fluidphysics.FFluidStatic;
+import net.skds.wpo.fluidphysics.FluidStatic;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -21,7 +21,7 @@ public class WaterFluidMixin {
     @Inject(method = "getTickDelay", at = @At(value = "TAIL"), cancellable = true)
     public void getTickDelayM(CallbackInfoReturnable<Integer> ci) {
         Integer oldTickDelay = ci.getReturnValue();
-        int newTickDelay = FFluidStatic.getTickDelay(oldTickDelay);
+        int newTickDelay = FluidStatic.getTickDelay(oldTickDelay);
         ci.setReturnValue(newTickDelay);
     }
 

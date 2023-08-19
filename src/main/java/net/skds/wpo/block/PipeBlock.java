@@ -19,9 +19,8 @@ import net.minecraft.world.IBlockReader;
 import net.minecraft.world.IWorld;
 import net.minecraft.world.World;
 import net.skds.wpo.block.tileentity.PipeTileEntity;
-import net.skds.wpo.util.interfaces.IBaseWL;
 
-public class PipeBlock extends Block implements IWaterLoggable, IBaseWL {
+public class PipeBlock extends Block implements IWaterLoggable {
 
 	public static final BooleanProperty WATERLOGGED = BlockStateProperties.WATERLOGGED;
 	public static final IntegerProperty FFL = BlockStateProperties.LEVEL;

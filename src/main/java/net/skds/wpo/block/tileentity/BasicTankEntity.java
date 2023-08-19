@@ -9,10 +9,7 @@ import net.minecraft.tileentity.TileEntity;
 import net.minecraft.tileentity.TileEntityType;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.fluids.capability.templates.FluidTank;
-import net.skds.wpo.fluidphysics.FFluidStatic;
-import net.skds.wpo.fluidphysics.actioniterables.FluidDisplacer;
-import net.skds.wpo.util.Constants;
-import net.skds.wpo.util.api.IPressuredTank;
+import net.skds.wpo.api.IPressuredTank;
 
 public abstract class BasicTankEntity extends TileEntity implements ITickableTileEntity, IPressuredTank, IFluidHandler {
 

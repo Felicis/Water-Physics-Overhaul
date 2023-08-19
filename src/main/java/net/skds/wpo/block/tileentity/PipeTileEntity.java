@@ -23,12 +23,12 @@ import net.minecraftforge.fluids.FluidAttributes;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandler;
-import net.skds.wpo.fluidphysics.FFluidStatic;
+import net.skds.wpo.fluidphysics.FluidStatic;
 import net.skds.wpo.network.PacketHandler;
 import net.skds.wpo.network.PipeUpdatePacket;
 import net.skds.wpo.registry.Entities;
-import net.skds.wpo.util.api.IConnectionSides;
-import net.skds.wpo.util.api.IPressuredTank;
+import net.skds.wpo.api.IConnectionSides;
+import net.skds.wpo.api.IPressuredTank;
 
 public class PipeTileEntity extends BasicTankEntity {
 
@@ -217,7 +217,7 @@ public class PipeTileEntity extends BasicTankEntity {
 	}
 
 	private void tickFluid() {
-		for (Direction dir : FFluidStatic.getAllRandomizedDirections(level.random)) {
+		for (Direction dir : FluidStatic.getAllRandomizedDirections(level.random)) {
 		//for (Direction dir : Direction.values()) {
 			int i = dir.get3DDataValue();
 			if (connections[i] != null) {

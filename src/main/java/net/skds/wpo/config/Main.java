@@ -4,7 +4,7 @@ import java.util.function.Function;
 
 import net.minecraftforge.common.ForgeConfigSpec;
 import net.skds.wpo.WPO;
-import net.skds.wpo.util.Constants;
+import net.skds.wpo.fluidphysics.Constants;
 
 public class Main {
 

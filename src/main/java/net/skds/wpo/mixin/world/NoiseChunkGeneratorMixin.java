@@ -8,7 +8,7 @@ import net.minecraft.world.chunk.ChunkSection;
 import net.minecraft.world.gen.ChunkGenerator;
 import net.minecraft.world.gen.NoiseChunkGenerator;
 import net.minecraft.world.gen.settings.DimensionStructuresSettings;
-import net.skds.wpo.fluidphysics.FFluidStatic;
+import net.skds.wpo.fluidphysics.FluidStatic;
 import net.skds.wpo.mixininterfaces.BlockReaderMixinInterface;
 import net.skds.wpo.mixininterfaces.ChunkSectionMixinInterface;
 import org.spongepowered.asm.mixin.Mixin;
@@ -31,7 +31,7 @@ public abstract class NoiseChunkGeneratorMixin extends ChunkGenerator {
     private void getBaseColumnM(int p_230348_1_, int p_230348_2_, CallbackInfoReturnable<IBlockReader> cir, BlockState[] ablockstate) {
         BlockReaderMixinInterface blockReader = (BlockReaderMixinInterface) cir.getReturnValue(); // interface to use method here
         FluidState[] fluidStates = Arrays.stream(ablockstate).sequential()
-                .map(FFluidStatic::getDefaultFluidState)
+                .map(FluidStatic::getDefaultFluidState)
                 .toArray(FluidState[]::new);
         blockReader.addFluidStates(fluidStates); // add fluid states so they can be accessed later
     }
@@ -40,7 +40,7 @@ public abstract class NoiseChunkGeneratorMixin extends ChunkGenerator {
     @Redirect(method = "fillFromNoise", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/chunk/ChunkSection;setBlockState(IIILnet/minecraft/block/BlockState;Z)Lnet/minecraft/block/BlockState;"))
     private BlockState setBlockStateAndFluidState(ChunkSection chunkSection, int pX, int pY, int pZ, BlockState blockstate, boolean useLocks) {
         chunkSection.setBlockState(pX, pY, pZ, blockstate, useLocks);
-        ((ChunkSectionMixinInterface) chunkSection).setFluidState(pX, pY, pZ, FFluidStatic.getDefaultFluidState(blockstate), useLocks);
+        ((ChunkSectionMixinInterface) chunkSection).setFluidState(pX, pY, pZ, FluidStatic.getDefaultFluidState(blockstate), useLocks);
         return null; // unused by method
     }
 

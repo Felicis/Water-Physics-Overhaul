@@ -10,7 +10,7 @@ import net.minecraft.world.IWorld;
 import net.minecraft.world.World;
 import net.minecraftforge.common.extensions.IForgeFluid;
 import net.minecraftforge.registries.ForgeRegistryEntry;
-import net.skds.wpo.fluidphysics.FFluidStatic;
+import net.skds.wpo.fluidphysics.FluidStatic;
 import net.skds.wpo.mixininterfaces.FluidMixinInterface;
 import org.spongepowered.asm.mixin.Mixin;
 
@@ -32,7 +32,7 @@ public abstract class FluidMixin extends ForgeRegistryEntry<Fluid> implements Fl
     @Override
     public void onPlace(FluidState pNewState, World pLevel, BlockPos pPos, FluidState pOldState, boolean pIsMoving) {
         // schedule fluid ticks after updating (this is called after successful setFluid, where FluidState actually changed)
-        FFluidStatic.scheduleFluidTick(pLevel, pPos);
+        FluidStatic.scheduleFluidTick(pLevel, pPos);
     }
 
     /**
@@ -52,7 +52,7 @@ public abstract class FluidMixin extends ForgeRegistryEntry<Fluid> implements Fl
     @Override
     public void neighborChanged(FluidState pState, World pLevel, BlockPos pPos, Fluid pFluid, BlockPos pFromPos, boolean pIsMoving) {
         //
-        FFluidStatic.scheduleFluidTick(pLevel, pPos);
+        FluidStatic.scheduleFluidTick(pLevel, pPos);
     }
 
     @Override

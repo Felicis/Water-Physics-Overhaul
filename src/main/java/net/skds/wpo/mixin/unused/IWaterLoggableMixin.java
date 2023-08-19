@@ -1,7 +1,7 @@
 package net.skds.wpo.mixin.unused;
 
 import net.minecraft.block.IWaterLoggable;
-import net.skds.wpo.util.marker.WPOFluidloggableMarker;
+import net.skds.wpo.util.WPOFluidloggableMarker;
 import org.spongepowered.asm.mixin.Mixin;
 
 @Mixin(IWaterLoggable.class)
