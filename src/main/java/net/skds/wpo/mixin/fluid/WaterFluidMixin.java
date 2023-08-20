@@ -28,13 +28,14 @@ public class WaterFluidMixin {
     /*
         Roadblock
      */
-    @Inject(method = "animateTick", at = @At(value = "HEAD"))
+    @Inject(method = "animateTick", at = @At(value = "HEAD"), cancellable = true)
     private void animateTickM(World pLevel, BlockPos pPos, FluidState pState, Random pRandom, CallbackInfo ci) {
-        // copied from Waterfluid.animateTick with changes
-        // CHANGE remove first if for flowing water
-        if (!pState.getValue(FlowingFluid.FALLING) && pRandom.nextInt(10) == 0) { // source or flowing (not falling)
+        // add particles for all water (not only source), corrected for level
+        // no sounds!!! (add those when flowing)
+        if (pRandom.nextInt(10) == 0) { // source or flowing
             double yPosParticle = (double) pPos.getY() + pRandom.nextDouble() * pState.getOwnHeight(); // CHANGE: no underwater particles above surface
             pLevel.addParticle(ParticleTypes.UNDERWATER, (double) pPos.getX() + pRandom.nextDouble(), yPosParticle, (double) pPos.getZ() + pRandom.nextDouble(), 0.0D, 0.0D, 0.0D);
         }
+        ci.cancel();
     }
 }

@@ -9,7 +9,6 @@ import net.minecraft.fluid.FlowingFluid;
 import net.minecraft.fluid.Fluid;
 import net.minecraft.fluid.FluidState;
 import net.minecraft.fluid.Fluids;
-import net.minecraft.particles.ParticleTypes;
 import net.minecraft.state.properties.SlabType;
 import net.minecraft.util.Direction;
 import net.minecraft.util.SoundCategory;
@@ -25,9 +24,9 @@ import net.minecraft.world.World;
 import net.minecraftforge.common.util.Constants.BlockFlags;
 import net.skds.wpo.WPO;
 import net.skds.wpo.config.WPOConfig;
-import net.skds.wpo.fluidphysics.flowiterators.FluidDisplacer;
 import net.skds.wpo.fluidphysics.flowgraphiterators.GraphEqualizer;
 import net.skds.wpo.fluidphysics.flowgraphiterators.GraphLedgeFinder;
+import net.skds.wpo.fluidphysics.flowiterators.FluidDisplacer;
 import net.skds.wpo.mixininterfaces.WorldMixinInterface;
 import net.skds.wpo.util.WPOFluidloggableMarker;
 import net.skds.wpo.util.tuples.Tuple2;
@@ -762,7 +761,13 @@ public class FluidStatic {
      */
     public static void tickFlowingFluid(World world, BlockPos pos, FluidState fluidState) {
         if (!fluidState.isEmpty()) { // if empty, skip ticking
-            if (!world.isClientSide) { // only on server
+            if (world.isClientSide) { // client
+                // play fluid sounds
+                Random random = new Random();
+                if (random.nextInt(40) == 0) {
+                    world.playLocalSound((double) pos.getX() + 0.5D, (double) pos.getY() + 0.5D, (double) pos.getZ() + 0.5D, SoundEvents.WATER_AMBIENT, SoundCategory.BLOCKS, random.nextFloat() * 0.25F + 0.75F, random.nextFloat() + 0.5F, false);
+                }
+            } else { // server
 //                // fluid mixing
 //                if (handleFluidMixing(world, pos, fluidState))
 //                    return;
@@ -771,13 +776,7 @@ public class FluidStatic {
                 Optional<BlockPos> flowDestination = handleDownhillFlow(world, pos, fluidState);
 
                 // do normal equalization
-                if (handleEqualization(world, pos, fluidState, (FlowingFluid) fluidState.getType())) // safe cast because fluidstate not empty
-                    return; // TODO: move before downhill check and also flow downhill
-
-                // TODO when flow triggered here call World.playLocalSound() -> ClientWorld.playLocalSound()... nop on server
-                // make water/lava (forge fluid?) sounds when packets move (mixin to ClientWorld.setFluid?)
-//			pLevel.playLocalSound((double)pPos.getX() + 0.5D, (double)pPos.getY() + 0.5D, (double)pPos.getZ() + 0.5D, SoundEvents.WATER_AMBIENT, SoundCategory.BLOCKS, pRandom.nextFloat() * 0.25F + 0.75F, pRandom.nextFloat() + 0.5F, false);
-//			pLevel.playLocalSound((double)pPos.getX(), (double)pPos.getY(), (double)pPos.getZ(), SoundEvents.LAVA_AMBIENT, SoundCategory.BLOCKS, 0.2F + pRandom.nextFloat() * 0.2F, 0.9F + pRandom.nextFloat() * 0.15F, false);
+                boolean hasEqualized = handleEqualization(world, pos, fluidState, (FlowingFluid) fluidState.getType());// safe cast because fluidstate not empty
             }
         }
     }
@@ -876,35 +875,10 @@ public class FluidStatic {
     private static boolean handleEqualization(World world, BlockPos startPos, FluidState fluidState, FlowingFluid fluid) {
         // TODO get eq flow direction (set) instead of doing it in iterable
         GraphEqualizer equalizer = new GraphEqualizer(world, startPos, fluid);
-        equalizer.tryExecute();
-//        // we assume no ledges nearby
-//        FluidState startFS = world.getFluidState(startPos);
-//        List<FluidState> neighborFluidStates = new ArrayList<>();
-//        // find valid neighbors
-//        for (Direction dir : getDirsRandomHorizontal(world.random)) {
-//            if (canFlow(world, startPos, dir)) {
-//                BlockPos neighborPos = startPos.relative(dir);
-//                FluidState neighborFS = world.getFluidState(neighborPos);
-//                BlockState neighborBS = world.getBlockState(neighborPos);
-//                if (FFluidStatic.canHoldFluid(neighborBS)) {
-//                    if (startFS.getType().isSame(neighborFS.getType()) || neighborFS.isEmpty()) { // only same fluid or empty
-//                        neighborFluidStates.add(neighborFS);
-//                    }
-//                }
-//            }
-//        }
-//        // get fluid packet sum
-//        int packetSum = startFS.getAmount();
-//        for (FluidState fs : neighborFluidStates) {
-//            packetSum += fs.getAmount();
-//        }
-//        // do packet math
-//        int packetsEach = packetSum / (1 + neighborFluidStates.size());
-//        int remainder = packetSum % packetsEach;
-        return false;
+        return equalizer.tryExecute();
     }
 
-    static boolean isWater(FluidState fluidState) {
+    private static boolean isWater(FluidState fluidState) {
         return fluidState.getType().isSame(Fluids.WATER) || fluidState.getType().isSame(Fluids.FLOWING_WATER);
     }
 
