@@ -309,7 +309,7 @@ public class FluidStatic {
 //            return false;
 //        }
 //    }
-// 
+//
 //    protected void spreadTo(IWorld pLevel, BlockPos pPos, BlockState pBlockState, Direction pDirection, FluidState pFluidState) {
 //        if (pBlockState.getBlock() instanceof ILiquidContainer) {
 //            ((ILiquidContainer)pBlockState.getBlock()).placeLiquid(pLevel, pPos, pBlockState, pFluidState);
@@ -503,28 +503,32 @@ public class FluidStatic {
      * @return
      */
     public static boolean setBlockAndFluid(World world, BlockPos pos, BlockState blockState, FluidState fluidState, boolean displaceFluid, int flags, int recursion) {
-        if (canHoldFluid(blockState)) { // can hold fluid => set fluid and (fluid-updated) block
-            BlockState newBlockState = updateFromFluidState(blockState, fluidState);
-            boolean setBlockSuccess = ((WorldMixinInterface) world).setBlockNoFluid(pos, newBlockState, flags, recursion);
-            boolean setFluidSuccess = ((WorldMixinInterface) world).setFluid(pos, fluidState, flags, recursion);
-            return setBlockSuccess && setFluidSuccess; // TODO: double check this; if block is set but false, no forge events
-        } else if (false) {
-            // TODO if block should be destroyed on fluid contact:
-            //  - World.destroyBlock
-            //  - FluidUtil.destroyBlockOnFluidPlacement
-            //  - BucketItem.emptyBucket
-            return false;
+        // IMPORTANT: set block before fluid, because fluid change notifies & updates block neighbors, which have to be set
+        if (canHoldFluid(blockState)) { // can hold fluid (also if destroyed by fluid) => set fluid and (fluid-updated) block
+            BlockState newBlockState = updateFromFluidState(blockState, fluidState); // waterlog OR fluid block
+            boolean blockChanged = ((WorldMixinInterface) world).setBlockNoFluid(pos, newBlockState, flags, recursion);
+            boolean fluidChanged = ((WorldMixinInterface) world).setFluid(pos, fluidState, flags, recursion);
+            return blockChanged || fluidChanged; // if nothing changed, no forge events
         } else if (!displaceFluid) { // can NOT hold fluid and DONT displace => destroy fluid
-            boolean setBlockSuccess = ((WorldMixinInterface) world).setBlockNoFluid(pos, blockState, flags, recursion);
-            boolean setFluidSuccess = ((WorldMixinInterface) world).setFluid(pos, Fluids.EMPTY.defaultFluidState(), flags, recursion);
-            return setBlockSuccess && setFluidSuccess; // TODO: double check this; if block is set but false, no forge events
-        } else if (recursion > 0) { // can not hold fluid => try displacing (prevent infinite recursion), then place block
+            boolean blockChanged = ((WorldMixinInterface) world).setBlockNoFluid(pos, blockState, flags, recursion);
+            boolean fluidChanged = ((WorldMixinInterface) world).setFluid(pos, Fluids.EMPTY.defaultFluidState(), flags, recursion);
+            return blockChanged || fluidChanged; // if nothing changed, no forge events
+//        } else if (false) {
+//            // TODO if block should be destroyed on fluid contact:
+//            //  - World.destroyBlock
+//            //  - FluidUtil.destroyBlockOnFluidPlacement
+//            //  - BucketItem.emptyBucket
+//            return false;
+        } else if (recursion > 0) { // can not hold fluid => place block and try displacing fluid (prevent infinite recursion)
             FluidDisplacer displacer = new FluidDisplacer(world, pos, fluidState);
             // flags = 3 is okay (block and client update + rerender + neighbor changes)
             // TODO why flags = 3 and not pass through?
-            boolean setFluidSuccess = displacer.tryExecute(flags, recursion - 1); // prevent infinite recursion
-            boolean setBlockSuccess = ((WorldMixinInterface) world).setBlockNoFluid(pos, blockState, flags, recursion); // first displace fluid, then set block
-            return setBlockSuccess && setFluidSuccess; // TODO: double check this; if block is set but false, no forge events
+            boolean fluidChanged = displacer.tryExecute(flags, recursion - 1); // displace before placing block; prevent infinite recursion
+            boolean blockChanged = ((WorldMixinInterface) world).setBlockNoFluid(pos, blockState, flags, recursion);
+            if (!fluidChanged) { // displacing did not work => delete
+                fluidChanged = ((WorldMixinInterface) world).setFluid(pos, Fluids.EMPTY.defaultFluidState(), flags, recursion);
+            }
+            return blockChanged || fluidChanged; // if nothing changed, no forge events
         } else { // recursion limit reached: error message with stack trace (but no exception)
             WPO.LOGGER.error("FFluidStatic.setBlockAndFluid and FluidDisplacer: reached recursion limit!", new Throwable());
             return false;
@@ -841,7 +845,7 @@ public class FluidStatic {
             scheduleFluidTick(world, posToTick);
         }
         // in 3x3x3 box: tick neighbors of fluids without flow (incl this)
-        tickNeighbors3x3x3(world, pos);
+        tickFluidNeighbors3x3x3(world, pos);
     }
 
     /**
@@ -856,10 +860,10 @@ public class FluidStatic {
             scheduleFluidTick(world, posToTick);
         }
         // in 3x3x3 box: tick neighbors of fluids without flow (incl this)
-        tickNeighbors3x3x3(world, pos);
+        tickFluidNeighbors3x3x3(world, pos);
     }
 
-    private static void tickNeighbors3x3x3(World world, BlockPos pos) {
+    private static void tickFluidNeighbors3x3x3(World world, BlockPos pos) {
         for (int dx = -1; dx <= 1; dx++) {
             for (int dy = -1; dy <= 1; dy++) {
                 for (int dz = -1; dz <= 1; dz++) {
