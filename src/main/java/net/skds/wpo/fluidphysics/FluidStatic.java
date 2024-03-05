@@ -1,5 +1,6 @@
 package net.skds.wpo.fluidphysics;
 
+import net.minecraft.block.*;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.FlowingFluidBlock;
@@ -10,6 +11,7 @@ import net.minecraft.fluid.Fluid;
 import net.minecraft.fluid.FluidState;
 import net.minecraft.fluid.Fluids;
 import net.minecraft.state.properties.SlabType;
+import net.minecraft.tags.BlockTags;
 import net.minecraft.util.Direction;
 import net.minecraft.util.SoundCategory;
 import net.minecraft.util.SoundEvents;
@@ -27,11 +29,13 @@ import net.skds.wpo.config.WPOConfig;
 import net.skds.wpo.fluidphysics.flowgraphiterators.GraphEqualizer;
 import net.skds.wpo.fluidphysics.flowgraphiterators.GraphLedgeFinder;
 import net.skds.wpo.fluidphysics.flowiterators.FluidDisplacer;
+import net.skds.wpo.mixininterfaces.FlowingFluidMixinInterface;
 import net.skds.wpo.mixininterfaces.WorldMixinInterface;
 import net.skds.wpo.util.WPOFluidloggableMarker;
 import net.skds.wpo.util.tuples.Tuple2;
 import net.skds.wpo.util.tuples.Tuple3;
 
+import java.util.*;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -165,17 +169,100 @@ public class FluidStatic {
     }
 
     /**
-     * use to check for fluidloggable blocks (to be handled by WPO)
+     * fluidloggable according to vanilla minecraft logic
+     * check FlowingFluid.canHoldFluid()
+     * @param state
+     * @return
+     */
+    private static boolean isVanillaFluidloggableBlock(BlockState state) {
+        Block block = state.getBlock();
+        if (block instanceof ILiquidContainer) {
+            if (block instanceof KelpBlock || block instanceof KelpTopBlock || block instanceof SeaGrassBlock || block instanceof TallSeaGrassBlock) {
+                return true; // only exists full of water, but needs to be fluidloggable for flows
+            } else if (block instanceof SlabBlock) {
+                return state.getValue(SlabBlock.TYPE) != SlabType.DOUBLE; // only if not double
+            } else if (block instanceof IWaterLoggable) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * can hold fluid without being destroyed
      *
      * @param state
      * @return
      */
-    public static boolean isFluidloggableBlock(BlockState state) {
-        return WPOFluidloggableMarker.isWPOFluidloggable(state.getBlock());
+    private static boolean isFluidloggableBlock(BlockState state) {
+        /* OLD */
+//        return WPOFluidloggableMarker.isWPOFluidloggable(state.getBlock());
+        /* NEW */
+        if (WPOConfig.SERVER.useCustomLists.get()) { // apply custom lists, else fall back to minecraft default
+            boolean inWhitelist = WPOConfig.SERVER.fluidloggableBlockList.contains(state.getBlock());
+            if (inWhitelist) return true;
+            boolean inBlacklist = WPOConfig.SERVER.notFluidloggableBlockList.contains(state.getBlock());
+            if (inBlacklist) return false;
+        }
+        return isVanillaFluidloggableBlock(state);
     }
 
     /**
-     * checks whether block could contain fluid (with exceptions), but not whether there is space for new fluid
+     * destroyed by fluid according to vanilla minecraft logic
+     * check FlowingFluid.canHoldFluid() and
+     * @param state
+     * @return
+     */
+    private static boolean isVanillaDestroyedByFluid(BlockState state) {
+        // FlowingFluid.canHoldFluid() && can not survive (e.g. flower) => mc first places water, then checks if block drops (later tick)
+        // TODO lava with height < 0.44 is destroyed by water, water/forge weird rule ?! (Fluid.canBeReplacedWith)
+        // TODO when are e.g. flowers destroyed?
+        Block block = state.getBlock();
+        if (!(block instanceof DoorBlock) && !block.is(BlockTags.SIGNS) && block != Blocks.LADDER && block != Blocks.SUGAR_CANE && block != Blocks.BUBBLE_COLUMN) {
+            Material material = state.getMaterial();
+            if (material != Material.PORTAL && material != Material.STRUCTURAL_AIR && material != Material.WATER_PLANT && material != Material.REPLACEABLE_WATER_PLANT) {
+                return !material.blocksMotion();
+            }
+        }
+        return false;
+    }
+
+    /**
+     * is destroyed by fluid (and thus makes space for fluid)
+     * @param state
+     * @return
+     */
+    public static boolean isDestroyedByFluid(BlockState state) {
+        /* OLD */
+//        Block block = state.getBlock();
+//        Material material = state.getMaterial();
+//        // materials which should be destroyed
+//        if (material == Material.CAKE || material == Material.REPLACEABLE_PLANT || material == Material.PLANT ||
+//            material == Material.REPLACEABLE_FIREPROOF_PLANT || material == Material.CACTUS) {
+//            // exceptions which should not be destroyed
+//            if (false) {
+//                return false;
+//            }
+//            return true;
+//        } else { // materials not destroyed
+//            // exceptions which should be destroyed
+//            if (block == Blocks.FIRE || block == Blocks.TORCH || block == Blocks.WALL_TORCH) {
+//                return true;
+//            }
+//            return false;
+//        }
+        /* NEW */
+        if (WPOConfig.SERVER.useCustomLists.get()) { // apply custom lists, else fall back to minecraft default
+            boolean inWhitelist = WPOConfig.SERVER.destroyedByFluidsBlockList.contains(state.getBlock());
+            if (inWhitelist) return true;
+            boolean inBlacklist = WPOConfig.SERVER.notDestroyedByFluidsBlockList.contains(state.getBlock());
+            if (inBlacklist) return false;
+        }
+        return isVanillaDestroyedByFluid(state);
+    }
+
+    /**
+     * checks whether block (state) could contain fluid (with exceptions), but not whether there is space for new fluid
      * <br/>
      * This is the case when:<br/>
      * a) the block is air (can be replaced with fluid)<br/>
@@ -208,6 +295,38 @@ public class FluidStatic {
         }
     }
 
+//    // FROM FlowingFluid: logic to destroy blocks when fluid touches them
+//    private boolean canHoldFluid(IBlockReader pLevel, BlockPos pPos, BlockState pState, Fluid pFluid) {
+//        Block block = pState.getBlock();
+//        if (block instanceof ILiquidContainer) {
+//            return ((ILiquidContainer)block).canPlaceLiquid(pLevel, pPos, pState, pFluid);
+//        } else if (!(block instanceof DoorBlock) && !block.is(BlockTags.SIGNS) && block != Blocks.LADDER && block != Blocks.SUGAR_CANE && block != Blocks.BUBBLE_COLUMN) {
+//            Material material = pState.getMaterial();
+//            if (material != Material.PORTAL && material != Material.STRUCTURAL_AIR && material != Material.WATER_PLANT && material != Material.REPLACEABLE_WATER_PLANT) {
+//                return !material.blocksMotion();
+//            } else {
+//                return false;
+//            }
+//        } else {
+//            return false;
+//        }
+//    }
+// 
+//    protected void spreadTo(IWorld pLevel, BlockPos pPos, BlockState pBlockState, Direction pDirection, FluidState pFluidState) {
+//        if (pBlockState.getBlock() instanceof ILiquidContainer) {
+//            ((ILiquidContainer)pBlockState.getBlock()).placeLiquid(pLevel, pPos, pBlockState, pFluidState);
+//        } else {
+//            if (!pBlockState.isAir()) {
+//                this.beforeDestroyingBlock(pLevel, pPos, pBlockState);
+//            }
+//            pLevel.setBlock(pPos, pFluidState.createLegacyBlock(), 3);
+//        }
+//    }
+
+
+    /**
+     * geometrical shapes of source and destination blocks allow flow through the shared block face
+     */
     public static boolean canFlow(IBlockReader world, BlockPos fromPos, Direction inDirection) {
         BlockState fromState = world.getBlockState(fromPos);
         BlockState toState = world.getBlockState(fromPos.relative(inDirection));
