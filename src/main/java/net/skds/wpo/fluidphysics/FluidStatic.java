@@ -889,6 +889,14 @@ public class FluidStatic {
                     world.playLocalSound((double) pos.getX() + 0.5D, (double) pos.getY() + 0.5D, (double) pos.getZ() + 0.5D, SoundEvents.WATER_AMBIENT, SoundCategory.BLOCKS, random.nextFloat() * 0.25F + 0.75F, random.nextFloat() + 0.5F, false);
                 }
             } else { // server
+                BlockState blockState = world.getBlockState(pos);
+                // destroy fluid sensitive blocks
+                if (!fluidState.isEmpty() && isDestroyedByFluid(blockState)) { // if has fluid => try destroying block
+                    ((FlowingFluidMixinInterface) fluidState.getType()).beforeDestroyingBlockCustom(world, pos, blockState); // fizz & drop
+                    setBlockAndFluid(world, pos, Blocks.AIR.defaultBlockState(), fluidState, false); // set to air
+                }
+
+
 //                // fluid mixing
 //                if (handleFluidMixing(world, pos, fluidState))
 //                    return;

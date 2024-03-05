@@ -11,6 +11,7 @@ import net.minecraft.world.IWorld;
 import net.minecraft.world.World;
 import net.skds.wpo.fluidphysics.FluidStatic;
 import net.skds.wpo.fluidphysics.RenderStatic;
+import net.skds.wpo.mixininterfaces.FlowingFluidMixinInterface;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -19,7 +20,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(FlowingFluid.class)
-public abstract class FlowingFluidMixin extends Fluid {
+public abstract class FlowingFluidMixin extends Fluid implements FlowingFluidMixinInterface {
 
     /*
         Roadblock
@@ -42,9 +43,9 @@ public abstract class FlowingFluidMixin extends Fluid {
         ci.setReturnValue(RenderStatic.getHeight(fs.getAmount()));
     }
 
-    public void beforeReplacingBlockCustom(IWorld worldIn, BlockPos pos, BlockState state) {
+    @Override
+    public void beforeDestroyingBlockCustom(IWorld worldIn, BlockPos pos, BlockState state) {
         beforeDestroyingBlock(worldIn, pos, state);
-
     }
 
     // ================= SHADOW ================ //
