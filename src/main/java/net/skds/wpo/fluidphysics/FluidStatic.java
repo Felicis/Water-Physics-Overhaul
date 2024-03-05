@@ -195,16 +195,19 @@ public class FluidStatic {
      * @return
      */
     private static boolean isFluidloggableBlock(BlockState state) {
-        /* OLD */
-//        return WPOFluidloggableMarker.isWPOFluidloggable(state.getBlock());
-        /* NEW */
         if (WPOConfig.SERVER.useCustomLists.get()) { // apply custom lists, else fall back to minecraft default
             boolean inWhitelist = WPOConfig.SERVER.fluidloggableBlockList.contains(state.getBlock());
             if (inWhitelist) return true;
             boolean inBlacklist = WPOConfig.SERVER.notFluidloggableBlockList.contains(state.getBlock());
             if (inBlacklist) return false;
         }
-        return isVanillaFluidloggableBlock(state);
+        if (WPOConfig.SERVER.vanillaFluidlogging.get()) {
+            return isVanillaFluidloggableBlock(state);
+        } else { // overhauled fluid logging
+            // TODO overhauled fluid logging without markers
+//        return WPOFluidloggableMarker.isWPOFluidloggable(state.getBlock());
+        }
+        return false;
     }
 
     /**
@@ -233,7 +236,16 @@ public class FluidStatic {
      * @return
      */
     public static boolean isDestroyedByFluid(BlockState state) {
-        /* OLD */
+        if (WPOConfig.SERVER.useCustomLists.get()) { // apply custom lists, else fall back to minecraft default
+            boolean inWhitelist = WPOConfig.SERVER.destroyedByFluidsBlockList.contains(state.getBlock());
+            if (inWhitelist) return true;
+            boolean inBlacklist = WPOConfig.SERVER.notDestroyedByFluidsBlockList.contains(state.getBlock());
+            if (inBlacklist) return false;
+        }
+        if (WPOConfig.SERVER.vanillaFluidlogging.get()) {
+            return isVanillaDestroyedByFluid(state);
+        } else { // overhauled fluid destroying
+            // TODO overhauled fluid destroying
 //        Block block = state.getBlock();
 //        Material material = state.getMaterial();
 //        // materials which should be destroyed
@@ -251,14 +263,8 @@ public class FluidStatic {
 //            }
 //            return false;
 //        }
-        /* NEW */
-        if (WPOConfig.SERVER.useCustomLists.get()) { // apply custom lists, else fall back to minecraft default
-            boolean inWhitelist = WPOConfig.SERVER.destroyedByFluidsBlockList.contains(state.getBlock());
-            if (inWhitelist) return true;
-            boolean inBlacklist = WPOConfig.SERVER.notDestroyedByFluidsBlockList.contains(state.getBlock());
-            if (inBlacklist) return false;
         }
-        return isVanillaDestroyedByFluid(state);
+        return false;
     }
 
     /**
@@ -273,25 +279,17 @@ public class FluidStatic {
      * @param state
      * @return
      */
-    public static boolean canHoldFluid(BlockState state) { // TODO fix (maybe check FlowingFluid.canHoldFluid)
+    public static boolean canHoldFluid(BlockState state) {
         if (isAirBlock(state)) // can be replaced with fluid block
             return true;
-        if (isFluidBlock(state)) {
+        if (isFluidBlock(state)) { // fluid blocks are obviously fluid
             return true;
         } else if (isFluidloggableBlock(state)) { // WPO fluidloggable (not only WATERLOGGED, but also)
-            // exceptions of fluidloggable blocks that should not hold fluid:
-            if (state.getBlock() instanceof SlabBlock && state.getValue(SlabBlock.TYPE) == SlabType.DOUBLE) {
-                return false; // double slabs cannot hold fluid
-            }
             return true;
-        } else { // can not hold fluid: check if can be destroyed (?)
-            // UGPRADE check FlowingFluid.canHoldFluid => if can be destroyed by fluid?
-            Material material = state.getMaterial();
-            if (material != Material.PORTAL && material != Material.STRUCTURAL_AIR && material != Material.WATER_PLANT && material != Material.REPLACEABLE_WATER_PLANT) {
-                return !material.blocksMotion();
-            } else {
-                return false;
-            }
+        } else if (isDestroyedByFluid(state)) { // explicitly and implicitly destroyed by fluid
+            return true;
+        } else {
+            return false;
         }
     }
 
