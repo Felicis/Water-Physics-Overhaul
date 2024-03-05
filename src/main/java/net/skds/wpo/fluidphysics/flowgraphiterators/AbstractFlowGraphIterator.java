@@ -35,7 +35,7 @@ public abstract class AbstractFlowGraphIterator<T> {
         if (cacheHitAndData.first) { // cache hit => use cached flow
             this.flowGraph = cacheHitAndData.second.first;
         } else { // cache miss => recompute flow
-            FlowGraphBuilder flowGraphBuilder = new FlowGraphBuilder(world, startPos, WPOConfig.COMMON.getMaxDist());
+            FlowGraphBuilder flowGraphBuilder = new FlowGraphBuilder(world, startPos, WPOConfig.SERVER.getMaxDist());
             Tuple2<Graph<BlockPos>, Set<BlockPos>> flowGraphAndBorder = flowGraphBuilder.computeFlowGraphAndBorder();
             this.flowGraph = flowGraphAndBorder.first;
             // update cache

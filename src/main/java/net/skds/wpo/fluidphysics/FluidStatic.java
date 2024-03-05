@@ -894,6 +894,6 @@ public class FluidStatic {
      */
     public static int getTickDelay(int oldRate) {
         // vanilla => water: 5, lava: 30 (10 in nether)
-        return (int) (oldRate * WPOConfig.COMMON.fluidTickRateScaling.get());
+        return (int) (oldRate * WPOConfig.SERVER.fluidTickRateScaling.get());
     }
 }

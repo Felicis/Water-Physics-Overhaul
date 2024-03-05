@@ -16,7 +16,7 @@ public class GraphLedgeFinder extends AbstractFlowGraphIterator<Direction> {
      * @param world
      */
     public GraphLedgeFinder(World world, BlockPos startPos) {
-        super(world, startPos, WPOConfig.COMMON.maxSlideDist.get() + 1); // +1 because iterable has to go down after ledge
+        super(world, startPos, WPOConfig.SERVER.maxSlideDist.get() + 1); // +1 because iterable has to go down after ledge
     }
 
     @Override

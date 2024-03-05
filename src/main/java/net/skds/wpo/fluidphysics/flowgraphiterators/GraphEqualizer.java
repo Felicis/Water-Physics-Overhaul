@@ -17,7 +17,7 @@ public class GraphEqualizer extends AbstractFlowGraphIterator<Void> {
     Map<BlockPos, FluidState> states = new HashMap<>();
 
     public GraphEqualizer(World world, BlockPos startPos, FlowingFluid fluid) {
-        super(world, startPos, WPOConfig.COMMON.maxEqDist.get());
+        super(world, startPos, WPOConfig.SERVER.maxEqDist.get());
         this.fluid = fluid;
         FluidState fluidState = world.getFluidState(startPos);
         levelsAtStartPos = fluidState.getAmount();

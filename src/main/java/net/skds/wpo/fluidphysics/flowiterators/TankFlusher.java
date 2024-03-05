@@ -29,7 +29,7 @@ public class TankFlusher extends AbstractFlowIterator<Integer> {
      * @param levelsToPlace
      */
     public TankFlusher(World world, BlockPos startPos, FlowingFluid tankFluid, int levelsToPlace) {
-        super(world, startPos, WPOConfig.COMMON.maxBucketDist.get());
+        super(world, startPos, WPOConfig.SERVER.maxBucketDist.get());
         this.tankFluid = tankFluid;
         this.levelsToPlace = levelsToPlace;
     }

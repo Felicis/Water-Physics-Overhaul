@@ -13,6 +13,9 @@ import net.skds.wpo.util.tuples.Tuple3;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * displaces fluid from a position. Run this before placing the block, which displaces the fluid (otherwise fluid can not escape the block and flow away).
+ */
 public class FluidDisplacer extends AbstractFlowIterator<Void> {
 
     int levelsToPlace;
@@ -20,7 +23,7 @@ public class FluidDisplacer extends AbstractFlowIterator<Void> {
     Map<BlockPos, FluidState> states = new HashMap<>();
 
     public FluidDisplacer(World world, BlockPos startPos, FluidState oldFluidState) {
-        super(world, startPos, WPOConfig.COMMON.maxDisplaceDist.get());
+        super(world, startPos, WPOConfig.SERVER.maxDisplaceDist.get());
         if (oldFluidState.isEmpty()) {
             isComplete = true; // no fluid to displace
         } else {

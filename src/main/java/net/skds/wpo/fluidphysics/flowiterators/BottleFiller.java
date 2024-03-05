@@ -18,7 +18,7 @@ public class BottleFiller extends AbstractFlowIterator<Void> {
     Map<BlockPos, FluidState> states = new HashMap<>();
 
     public BottleFiller(World w, BlockPos startPos, FlowingFluid f) {
-        super(w, startPos, WPOConfig.COMMON.maxBucketDist.get());
+        super(w, startPos, WPOConfig.SERVER.maxBucketDist.get());
         fluid = f;
     }
 

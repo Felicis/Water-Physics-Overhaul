@@ -31,7 +31,7 @@ public class TankFiller extends AbstractFlowIterator<Integer> {
      * @param fluidHandlerItem
      */
     public TankFiller(World world, BlockPos startPos, FlowingFluid fluid, IFluidHandlerItem fluidHandlerItem) {
-        super(world, startPos, WPOConfig.COMMON.maxBucketDist.get());
+        super(world, startPos, WPOConfig.SERVER.maxBucketDist.get());
         this.fluid = fluid;
         this.fluidHandlerItem = fluidHandlerItem;
         maxTankLevels = this.fluidHandlerItem.getTankCapacity(0) / Constants.MILLIBUCKETS_PER_LEVEL;

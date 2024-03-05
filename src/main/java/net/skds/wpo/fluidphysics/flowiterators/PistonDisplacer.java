@@ -29,7 +29,7 @@ public class PistonDisplacer extends AbstractFlowIterator<Void> {
      * @param invalidPosSet
      */
     public PistonDisplacer(World world, BlockPos startPos, FlowingFluid fluidToDisplace, int levelsToDisplace, Set<BlockPos> invalidPosSet) {
-        super(world, startPos, WPOConfig.COMMON.maxDisplaceDist.get());
+        super(world, startPos, WPOConfig.SERVER.maxDisplaceDist.get());
         this.fluid = fluidToDisplace;
         levelsToPlace = levelsToDisplace;
         this.invalidPosSet = invalidPosSet;
