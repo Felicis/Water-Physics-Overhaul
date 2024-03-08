@@ -49,14 +49,14 @@ public class Main {
 
         innerBuilder.push("Default fluidlogging and fluid mixing behaviour");
         vanillaFluidlogging = builder.apply("vanillaFluidlogging").comment("true: vanilla behaviour, false: overhauled behaviour")
-                .define("vanillaFluidlogging", false);
+                .define("vanillaFluidlogging", true);
         vanillaFluidMixing = builder.apply("vanillaFluidMixing").comment("true: vanilla behaviour, false: overhauled behaviour")
-                .define("vanillaFluidMixing", false);
+                .define("vanillaFluidMixing", true);
         innerBuilder.pop();
 
         innerBuilder.push("Custom behaviour (overrides default behaviour if active. also are applied in order and can override each other)");
         useCustomLists = builder.apply("useCustomLists").comment("true: custom lists override default behaviour, false: custom lists ignored")
-                .define("useCustomLists", false);
+                .define("useCustomLists", true);
         // fluidloggable/destroyed by fluids whitelist & blacklist (overrides internal settings)
         fluidloggableBlockListString = builder.apply("fluidloggableBlocksList")
                 .comment("List of all block registry names, that should be fluidloggable (whitelist)")
