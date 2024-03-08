@@ -817,13 +817,11 @@ public class FluidStatic {
      * @param pos
      */
     public static void scheduleFluidTick(IWorld world, BlockPos pos) {
-        Fluid fluid = world.getFluidState(pos).getType();
-        if (!fluid.isSame(Fluids.EMPTY)) { // only schedule tick if contains fluid
-            if (world.hasChunkAt(pos)) { // fluids should not gen chunks (but if not ticking should tick once they're ticking again)
-                if (!world.getLiquidTicks().hasScheduledTick(pos, fluid)) { // no duplicate ticks
-                    world.getLiquidTicks().scheduleTick(pos, fluid, fluid.getTickDelay(world));
-                    // ticking chunk check not needed, because not ticking chunks do not process their ticks until they start ticking again
-                }
+        if (world.hasChunkAt(pos)) { // fluids should not gen chunks (but if not ticking should tick once they're ticking again)
+            Fluid fluid = world.getFluidState(pos).getType();
+            if (!fluid.isSame(Fluids.EMPTY)) { // only schedule tick if contains fluid
+                world.getLiquidTicks().scheduleTick(pos, fluid, fluid.getTickDelay(world)); // does not schedule duplicate
+                // ticking chunk check not needed, because not ticking chunks do not process their ticks until they start ticking again
             }
         }
     }
