@@ -1,10 +1,6 @@
 package net.skds.wpo.fluidphysics;
 
 import net.minecraft.block.*;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
-import net.minecraft.block.FlowingFluidBlock;
-import net.minecraft.block.SlabBlock;
 import net.minecraft.block.material.Material;
 import net.minecraft.fluid.FlowingFluid;
 import net.minecraft.fluid.Fluid;
@@ -31,11 +27,9 @@ import net.skds.wpo.fluidphysics.flowgraphiterators.GraphLedgeFinder;
 import net.skds.wpo.fluidphysics.flowiterators.FluidDisplacer;
 import net.skds.wpo.mixininterfaces.FlowingFluidMixinInterface;
 import net.skds.wpo.mixininterfaces.WorldMixinInterface;
-import net.skds.wpo.util.WPOFluidloggableMarker;
 import net.skds.wpo.util.tuples.Tuple2;
 import net.skds.wpo.util.tuples.Tuple3;
 
-import java.util.*;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -549,7 +543,7 @@ public class FluidStatic {
             // use FlowingFluidBlock.getFluidState(BlockState): auto converts between (block) legacy level and (fluid) true level
             FluidState fluidState1 = ((FlowingFluidBlock) blockState.getBlock()).getFluidState(blockState);
             return setBlockAndFluid(world, pos, blockState, fluidState1, false, flags, recursion); // no displace required
-        } else if (fluidState.isEmpty()) { // TODO schedule fluid tick for neighbors?
+        } else if (fluidState.isEmpty()) {
             return ((WorldMixinInterface) world).setBlockNoFluid(pos, blockState, flags, recursion);
         } else { // UPGRADE: if setBlock is called with moving but not set again later, call setBlockAndFluid in mixin to adapt to fluid
             if ((flags & BlockFlags.IS_MOVING) != 0) { // if MOVING => setBlock is also called later without MOVING => ignore fluids now

@@ -33,11 +33,11 @@ public interface WorldMixinInterface extends IWorldWriterMixinInterface {
 
     void markAndNotifyFluid(BlockPos pPos, @Nullable Chunk chunk, FluidState actualFluidState, FluidState fluidState, int pFlags, int pRecursionLeft);
 
-    void updateNeighborsAt(BlockPos pPos, Fluid pFluid);
+//    void updateNeighborsAt(BlockPos pPos, Fluid pFluid);
 
-    void neighborChanged(BlockPos pPos, Fluid pFluid, BlockPos pFromPos);
+//    void neighborChanged(BlockPos pPos, Fluid pFluid, BlockPos pFromPos);
 
     boolean setFluid(BlockPos pPos, FluidState pState);
 
-    void updateNeighborsAtExceptFromFacing(BlockPos pPos, Fluid pFluidType, Direction pSkipSide);
+//    void updateNeighborsAtExceptFromFacing(BlockPos pPos, Fluid pFluidType, Direction pSkipSide);
 }

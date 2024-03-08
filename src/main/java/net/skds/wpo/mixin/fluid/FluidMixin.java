@@ -49,16 +49,16 @@ public abstract class FluidMixin extends ForgeRegistryEntry<Fluid> implements Fl
         // update BlockSTate.waterlogged?
     }
 
-    @Override
-    public void neighborChanged(FluidState pState, World pLevel, BlockPos pPos, Fluid pFluid, BlockPos pFromPos, boolean pIsMoving) {
-        //
-        FluidStatic.scheduleFluidTick(pLevel, pPos);
-    }
+//    @Override
+//    public void neighborChanged(FluidState pState, World pLevel, BlockPos pPos, Fluid pFluid, BlockPos pFromPos, boolean pIsMoving) {
+//        //
+//        FluidStatic.scheduleFluidTick(pLevel, pPos);
+//    }
 
-    @Override
     /**
      * Returns the unlocalized name of the fluid with "fluid." appended to the front.
      */
+    @Override
     public String getDescriptionId() {
         // copied from Block.getDescriptionId()
         // used for neighborChanged crash message
@@ -68,15 +68,15 @@ public abstract class FluidMixin extends ForgeRegistryEntry<Fluid> implements Fl
         return this.descriptionId;
     }
 
-    /**
-     * Update the provided state given the provided neighbor facing and neighbor state, returning a new state.
-     * For example, fences make their connections to the passed in state if possible, and wet concrete powder immediately
-     * returns its solidified counterpart.
-     * Note that this method should ideally consider only the specific face passed in.
-     */
-    @Override
-    public FluidState updateShape(FluidState pState, Direction pFacing, FluidState pFacingState, IWorld pLevel, BlockPos pCurrentPos, BlockPos pFacingPos) {
-        // do something here?
-        return pState;
-    }
+//    /**
+//     * Update the provided state given the provided neighbor facing and neighbor state, returning a new state.
+//     * For example, fences make their connections to the passed in state if possible, and wet concrete powder immediately
+//     * returns its solidified counterpart.
+//     * Note that this method should ideally consider only the specific face passed in.
+//     */
+//    @Override
+//    public FluidState updateShape(FluidState pState, Direction pFacing, FluidState pFacingState, IWorld pLevel, BlockPos pCurrentPos, BlockPos pFacingPos) {
+//        // do something here?
+//        return pState;
+//    }
 }

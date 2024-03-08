@@ -85,18 +85,18 @@ public abstract class ServerWorldMixin extends World implements WorldMixinInterf
         // no pathfinding update needed
     }
 
-    /**
-     * notifies neighbors that fluid state changed (after setFluid)
-     *
-     * @param pPos
-     * @param pFluid
-     */
-    @Override
-    public void fluidUpdated(BlockPos pPos, Fluid pFluid) {
-        if (!this.isDebug()) {
-            this.updateNeighborsAt(pPos, pFluid); // for neighbor: World.neighborChanged() -> (BlockState) world.getBlockState(pos).neighborChanged(...)
-        }
-    }
+//    /**
+//     * notifies neighbors that fluid state changed (after setFluid)
+//     *
+//     * @param pPos
+//     * @param pFluid
+//     */
+//    @Override
+//    public void fluidUpdated(BlockPos pPos, Fluid pFluid) {
+//        if (!this.isDebug()) {
+//            this.updateNeighborsAt(pPos, pFluid); // for neighbor: World.neighborChanged() -> (BlockState) world.getBlockState(pos).neighborChanged(...)
+//        }
+//    }
 
     // INFO: skip onFluidStateChange (= onBlockStateChange): not needed bc only update POIs which (afaik) only depend on BlockStates
 }
