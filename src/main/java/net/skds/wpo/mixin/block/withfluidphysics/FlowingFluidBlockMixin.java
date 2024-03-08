@@ -56,7 +56,7 @@ public abstract class FlowingFluidBlockMixin extends Block {
          Roadblock
      */
     @Inject(method = "onPlace", at = @At(value = "HEAD"), cancellable = true)
-    private void onPlaceM(BlockState pState, World pLevel, BlockPos pPos, BlockState pOldState, boolean pIsMoving, CallbackInfo ci) {
+    private void onPlace_roadblock(BlockState pState, World pLevel, BlockPos pPos, BlockState pOldState, boolean pIsMoving, CallbackInfo ci) {
         // TODO sync with FluidMixin
         ci.cancel(); // do not schedule fluid tick here. setFluid already does it
     }
