@@ -69,7 +69,7 @@ public abstract class FlowingFluidBlockMixin extends Block {
         // TODO sync with FluidMixin
         // UPGRADE: copied from FlowingFluidBlock.updateShape with changes
         // change: do not check source, check canFlow and canHoldFluid
-        if (FluidStatic.canFlow(pLevel, pCurrentPos, pFacing) && FluidStatic.canHoldFluid(pFacingState)) {
+        if (FluidStatic.canFlow(pLevel, pCurrentPos, pFacing, false) && FluidStatic.canHoldFluid(pFacingState)) {
             FluidStatic.scheduleFluidTick(pLevel, pCurrentPos);
         }
         cir.setReturnValue(super.updateShape(pState, pFacing, pFacingState, pLevel, pCurrentPos, pFacingPos));

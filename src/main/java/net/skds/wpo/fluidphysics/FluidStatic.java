@@ -319,11 +319,14 @@ public class FluidStatic {
     /**
      * geometrical shapes of source and destination blocks allow flow through the shared block face
      */
-    public static boolean canFlow(IBlockReader world, BlockPos fromPos, Direction inDirection) {
+    public static boolean canFlow(IBlockReader world, BlockPos fromPos, Direction inDirection, boolean ignoreSourceOcclusion) {
         BlockState fromState = world.getBlockState(fromPos);
         BlockState toState = world.getBlockState(fromPos.relative(inDirection));
         VoxelShape voxelShape1 = fromState.getCollisionShape(world, fromPos);
         VoxelShape voxelShape2 = toState.getCollisionShape(world, fromPos.relative(inDirection));
+        if (ignoreSourceOcclusion) {
+            voxelShape1 = VoxelShapes.empty();
+        }
         if (voxelShape1.isEmpty() && voxelShape2.isEmpty()) {
             return true;
         }
@@ -332,7 +335,7 @@ public class FluidStatic {
     }
 
     public static boolean canFlowAndHold(IBlockReader world, BlockPos fromPos, Direction inDirection) {
-        return canFlow(world, fromPos, inDirection) && canHoldFluid(world.getBlockState(fromPos.relative(inDirection)));
+        return canFlow(world, fromPos, inDirection, false) && canHoldFluid(world.getBlockState(fromPos.relative(inDirection)));
     }
 
     public static boolean hasWaterloggedProperty(BlockState state) {
@@ -882,6 +885,16 @@ public class FluidStatic {
                 }
             } else { // server
                 BlockState blockState = world.getBlockState(pos);
+                // fix invalid state: NOT fluidloggable block contains fluid (e.g. if fluidloggable config changed)
+                if (!fluidState.isEmpty() && !canHoldFluid(blockState)) {
+                    // eject invalid fluid
+                    FluidDisplacer displacer = new FluidDisplacer(world, pos, fluidState);
+                    boolean fluidChanged = displacer.tryExecute(); // does not care about existing blockstate conflicting with the fluid
+                    if (!fluidChanged) { // displacing did not work => delete
+                        fluidChanged = ((WorldMixinInterface) world).setFluid(pos, Fluids.EMPTY.defaultFluidState());
+                    }
+                    return; // fluid was deleted/moved so can not tick :)
+                }
                 // destroy fluid sensitive blocks
                 if (!fluidState.isEmpty() && isDestroyedByFluid(blockState)) { // if has fluid => try destroying block
                     ((FlowingFluidMixinInterface) fluidState.getType()).beforeDestroyingBlockCustom(world, pos, blockState); // fizz & drop

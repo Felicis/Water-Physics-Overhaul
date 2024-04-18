@@ -47,7 +47,9 @@ public class FluidDisplacer extends AbstractFlowIterator<Void> {
     @Override
     protected boolean skipProcessingStartPos() {
         // since current pos should displace, it is not valid initial pos,
-        // therefore use all adjacent pos that are valid and can flow to
+        // therefore use all adjacent pos that are valid and can flow to.
+        // also ignore start pos geometry (this means start pos can already
+        // contain a possible non fluidloggable block from which the fluid is extracted
         return true;
     }
 

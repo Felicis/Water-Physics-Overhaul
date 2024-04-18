@@ -281,7 +281,7 @@ public class EventStatic {
                 // 1) place as many levels as possible into pushed block (the block which moved into this pos forcing the displacing)
                 FluidState pushedFluidState = world.getFluidState(pos);
                 BlockState pushedBlockState = world.getBlockState(pos.relative(moveDirection.getOpposite())); // pushing not happened yet!!!
-                if (FluidStatic.canHoldFluid(pushedBlockState) && FluidStatic.canFlow(world, pos, moveDirection.getOpposite())
+                if (FluidStatic.canHoldFluid(pushedBlockState) && FluidStatic.canFlow(world, pos, moveDirection.getOpposite(), false)
                         && (fluidToDisplace.isSame(pushedFluidState.getType()) || pushedFluidState.isEmpty())) {
                     Tuple3<Boolean, Integer, FluidState> tuple3 = FluidStatic.placeLevelsUpTo(pushedFluidState, fluidToDisplace, levelsToDisplace);
                     Boolean wasPlaced = tuple3.first;

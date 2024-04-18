@@ -159,7 +159,8 @@ public abstract class AbstractFlowGraphIterator<T> {
                             }
                         }
                     } else {
-                        int asdf = 3;
+                        // this breakpoint triggers when the flowgraph is empty (usually wrong) => trace and fix the bug
+                        int fixme = 3;
                     }
                 }
             }

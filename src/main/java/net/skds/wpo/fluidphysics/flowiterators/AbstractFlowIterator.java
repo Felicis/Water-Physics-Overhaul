@@ -40,6 +40,7 @@ public abstract class AbstractFlowIterator<T> {
 
     /**
      * override to skip processing (e.g. fluid displacer skips start position)
+     * and to ignore the startPos occlusion (e.g. displacer to fix invalid fluid in NOT fluidloggable block => displace without being able to flow out)
      *
      * @return
      */
@@ -160,7 +161,8 @@ public abstract class AbstractFlowIterator<T> {
                 if (range < maxRange) { // if not max range reached  => generate new pos's
                     // first down, then random sides, then up // TODO for taking maybe up, sides, down?
                     for (Direction nextDir : getNextDirections()) {
-                        if (FluidStatic.canFlow(world, posCurrent, nextDir)) { // if can flow through blocks in that direction
+                        boolean ignoreSourceOcclusion = (range == 0 && skipProcessingStartPos());
+                        if (FluidStatic.canFlow(world, posCurrent, nextDir, ignoreSourceOcclusion)) { // if can flow through blocks in that direction
                             BlockPos posNew = posCurrent.relative(nextDir);
                             if (!allVisited.contains(posNew)) { // do not visit twice
                                 allVisited.add(posNew);
