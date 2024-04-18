@@ -183,7 +183,8 @@ public class FluidStatic {
     }
 
     /**
-     * can hold fluid without being destroyed
+     * can hold fluid without being destroyed<br/>
+     * DO not use directly: use canHoldFluid() instead
      *
      * @param state
      * @return
@@ -266,8 +267,9 @@ public class FluidStatic {
      * <br/>
      * This is the case when:<br/>
      * a) the block is air (can be replaced with fluid)<br/>
-     * a) the block is a (pure) fluid block<br/>
-     * b) the block can be fluidlogged<br/><br/>
+     * b) the block is a (pure) fluid block<br/>
+     * c) the block can be fluidlogged<br/>
+     * d) the block is destroyed by fluids<br/><br/>
      * This does not guarantee that there is enough space left in the pos, but it can always be ejected :)
      *
      * @param state
@@ -277,6 +279,7 @@ public class FluidStatic {
         if (isAirBlock(state)) // can be replaced with fluid block
             return true;
         if (isFluidBlock(state)) { // fluid blocks are obviously fluid
+            // TODO do not mix different fluids
             return true;
         } else if (isFluidloggableBlock(state)) { // WPO fluidloggable (not only WATERLOGGED, but also)
             return true;

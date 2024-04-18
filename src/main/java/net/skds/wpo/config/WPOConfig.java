@@ -1,13 +1,10 @@
 package net.skds.wpo.config;
 
-import java.nio.file.Paths;
-
+import net.minecraftforge.common.ForgeConfigSpec;
+import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.config.ModConfig;
 import net.skds.wpo.WPO;
 import org.apache.commons.lang3.tuple.Pair;
-
-import net.minecraftforge.common.ForgeConfigSpec;
-import net.minecraftforge.fml.ModLoadingContext;
 
 public class WPOConfig {
 

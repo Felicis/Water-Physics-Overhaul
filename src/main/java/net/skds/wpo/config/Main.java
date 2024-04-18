@@ -84,6 +84,7 @@ public class Main {
     private static List<Block> parseList(ForgeConfigSpec.ConfigValue<String> blockListString) {
         ArrayList<Block> list = new ArrayList<>();
         // remove all whitespace and quotes (") and split on comma
+        // if string empty "", adds minecraft:air (!)
         for (String s : blockListString.get().replaceAll("\\s","").replace("\"", "").split(",")) {
             try {
                 list.add(ForgeRegistries.BLOCKS.getValue(new ResourceLocation(s)));
