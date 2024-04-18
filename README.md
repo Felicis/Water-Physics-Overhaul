@@ -1,9 +1,6 @@
-# Water Physics Overhaul (1.16-1.18)
-_(unofficial fork of [Water Physics Overhaul](https://github.com/Sasai-Kudasai-BM/Water-Physics-Overhaul) by Sasai-Kudasai-BM)_
+# Water Physics Overhaul (1.16, 1.18 coming soon)
 
-https://legacy.curseforge.com/minecraft/mc-mods/water-physics-overhaul-revived
-
-https://modrinth.com/mod/water-physics-overhaul/
+https://www.curseforge.com/minecraft/mc-mods/realistic-fluid-flows
 
 -- video/images coming soon --
 
