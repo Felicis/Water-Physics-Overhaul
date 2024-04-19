@@ -6,6 +6,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.material.FluidState;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -16,6 +17,7 @@ import static net.skds.wpo.WPO.LOGGER;
 
 @Mixin(value = { LivingEntity.class })
 public abstract class LivingEntityMixin extends Entity {
+
     @Shadow protected abstract void defineSynchedData();
 
     @Shadow protected abstract float getWaterSlowDown();
@@ -46,9 +48,9 @@ public abstract class LivingEntityMixin extends Entity {
     @ModifyVariable(method = "travel", at = @At("STORE"), name = "f5")
     private float correctWaterSpeedForDepth(float oldWaterSpeed) {
         if (oldWaterSpeed == 0.02F) {  // this is the init value: this only checks if the call is right after init
-            FluidState fluidstate = this.level.getFluidState(this.blockPosition());
+            FluidState fluidstate = this.level().getFluidState(this.blockPosition());
             BlockPos blockpos = this.getBlockPosBelowThatAffectsMyMovement();
-            float f3 = this.level.getBlockState(blockpos).getFriction(level, blockpos, this);
+            float f3 = this.level().getBlockState(blockpos).getFriction(level(), blockpos, this);
             float landSpeed = this.getFrictionInfluencedSpeed(f3); // <-> f6 -- walking speed (on dry ground)
             // LERP: (water amount: 0 to AMOUNT_FULL) -> (speed: landSpeed to oldWaterSpeed)
             float waterSpeed = landSpeed - (landSpeed - oldWaterSpeed) * fluidstate.getAmount() / FluidState.AMOUNT_FULL;
@@ -67,9 +69,9 @@ public abstract class LivingEntityMixin extends Entity {
         // this is the init value: this only checks if the call is right after init
         if (this.isSprinting() && oldWaterDrag == 0.9F || !this.isSprinting() && oldWaterDrag == this.getWaterSlowDown()) {
             BlockPos blockpos = this.getBlockPosBelowThatAffectsMyMovement();
-            float f3 = this.level.getBlockState(blockpos).getFriction(level, blockpos, this);
-            float landDrag = this.onGround ? f3 * 0.91F : 0.91F; // <-> f5 -- walking drag (on dry ground)
-            FluidState fluidstate = this.level.getFluidState(this.blockPosition());
+            float f3 = this.level().getBlockState(blockpos).getFriction(level(), blockpos, this);
+            float landDrag = this.onGround() ? f3 * 0.91F : 0.91F; // <-> f5 -- walking drag (on dry ground)
+            FluidState fluidstate = this.level().getFluidState(this.blockPosition());
             // LERP: (water amount: 0 to AMOUNT_FULL) -> (speed: landDrag to oldWaterDrag)  => see lerp for Depth Strider
             float waterDrag = landDrag + (oldWaterDrag - landDrag) * fluidstate.getAmount() / FluidState.AMOUNT_FULL;
 //            LOGGER.info("LivingEntity.travel: water_level=" + fluidstate.getAmount() + ", oldDrag=" + oldWaterDrag +

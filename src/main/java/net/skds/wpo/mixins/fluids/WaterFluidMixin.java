@@ -2,6 +2,7 @@ package net.skds.wpo.mixins.fluids;
 
 import java.util.Random;
 
+import net.minecraft.util.RandomSource;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
 
@@ -21,7 +22,7 @@ public class WaterFluidMixin {
 
 	@OnlyIn(Dist.CLIENT)
 	@Overwrite
-	public void animateTick(Level worldIn, BlockPos pos, FluidState state, Random random) {
+	public void animateTick(Level worldIn, BlockPos pos, FluidState state, RandomSource random) {
 		if (!state.isSource() && !state.getValue(BlockStateProperties.FALLING)) {
 
 			if (random.nextInt(16) == 0 && state.getFlow(worldIn, pos).lengthSqr() > 0.5D) {

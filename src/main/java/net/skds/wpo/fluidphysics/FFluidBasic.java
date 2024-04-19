@@ -1,24 +1,26 @@
 package net.skds.wpo.fluidphysics;
 
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.server.level.FullChunkStatus;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.SimpleWaterloggedBlock;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.chunk.ChunkAccess;
+import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.material.FlowingFluid;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.level.material.Fluids;
-import net.minecraft.core.Direction;
-import net.minecraft.core.BlockPos;
-import net.minecraft.world.level.chunk.LevelChunk;
-import net.minecraft.world.level.chunk.ChunkAccess;
-import net.minecraft.server.level.ChunkHolder;
-import net.minecraft.server.level.ServerLevel;
 import net.skds.core.api.IWWSG;
 import net.skds.core.util.blockupdate.BasicExecutor;
 import net.skds.core.util.blockupdate.UpdateTask;
 import net.skds.wpo.WPOConfig;
 import net.skds.wpo.util.interfaces.IFlowingFluid;
+
+import java.util.Random;
 
 public abstract class FFluidBasic extends BasicExecutor {
 
@@ -27,6 +29,7 @@ public abstract class FFluidBasic extends BasicExecutor {
 	protected final int MFL = WPOConfig.MAX_FLUID_LEVEL;
 	protected final Fluid fluid;
 	protected final ServerLevel w;
+	protected final Random random;
 	protected final BlockPos pos;
 	protected final long longpos;
 
@@ -41,6 +44,7 @@ public abstract class FFluidBasic extends BasicExecutor {
 		this.castOwner = owner;
 		this.worker = worker;
 		this.w = w;
+		this.random = new Random();
 		this.mode = mode;
 		this.state = getBlockState(pos);
 		this.fs = this.state.getFluidState();
@@ -88,7 +92,7 @@ public abstract class FFluidBasic extends BasicExecutor {
 			// world.markBlockRangeForRenderUpdate(pos, oldState, newState);
 
 			if (chunk.getFullStatus() != null
-					&& chunk.getFullStatus().isOrAfter(ChunkHolder.FullChunkStatus.TICKING)) {
+					&& chunk.getFullStatus().isOrAfter(FullChunkStatus.BLOCK_TICKING)) {
 				world.sendBlockUpdated(pos, oldState, newState, 3);
 			}
 

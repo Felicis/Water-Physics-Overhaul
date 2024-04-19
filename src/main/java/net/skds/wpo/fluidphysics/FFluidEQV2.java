@@ -12,6 +12,8 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.skds.wpo.WPOConfig;
 
+import java.util.Random;
+
 public class FFluidEQV2 extends FFluidBasic {
 
 	FFluidEQV2(ServerLevel w, BlockPos pos, WorldWorkSet owner, FFluidBasic.Mode mode, int worker) {
@@ -65,7 +67,7 @@ public class FFluidEQV2 extends FFluidBasic {
 		boolean[] diag2 = { false, true };
 
 		/// System.out.println("len");
-		for (Direction dir : FFluidStatic.getRandomizedDirections(w.getRandom(), false)) {
+		for (Direction dir : FFluidStatic.getRandomizedDirections(random, false)) {
 			for (boolean diag : diag2) {
 
 				boolean selPosb2 = false;

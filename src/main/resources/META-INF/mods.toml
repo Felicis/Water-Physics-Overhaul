@@ -54,7 +54,7 @@ Is it really needed?
 [[dependencies.wpo]]
     modId="minecraft"
     mandatory=true
-    versionRange="[1.18,1.19)"
+    versionRange="[1.20,1.21)"
     ordering="NONE"
     side="BOTH"
 

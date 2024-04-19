@@ -53,7 +53,7 @@ public class FFluidDefault extends FFluidBasic {
 		}
 
 		BlockPos posD = pos.below();
-		if (posD.getY() < 0) {
+		if (posD.getY() < -64) {
 			level = 0;
 			state = getUpdatedState(state, level);
 			sc = true;
@@ -158,7 +158,7 @@ public class FFluidDefault extends FFluidBasic {
 			state = getUpdatedState(state, level);
 			int r = -1;
 			if (d > 0) {
-				r = w.getRandom().nextInt(c);
+				r = random.nextInt(c);
 			}
 
 			i = 0;

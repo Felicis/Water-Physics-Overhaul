@@ -13,6 +13,8 @@ import net.minecraft.util.Mth;
 import net.minecraft.server.level.ServerLevel;
 import net.skds.wpo.WPOConfig;
 
+import java.util.Random;
+
 public class FFluidEQ extends FFluidBasic {
 
 	FFluidEQ(ServerLevel w, BlockPos pos, WorldWorkSet owner, FFluidBasic.Mode mode, int worker) {
@@ -32,7 +34,7 @@ public class FFluidEQ extends FFluidBasic {
 		// boolean slide = false;
 		// setState(pos.add(0, 16, 0), Blocks.STONE.getDefaultState());
 		boolean slided = false;
-		int i0 = w.getRandom().nextInt(4);
+		int i0 = random.nextInt(4);
 		if (slide && !canReach(pos, pos.below(), state, getBlockState(pos.below())) && level == 1) {
 			slided = slide();
 		}
@@ -67,7 +69,7 @@ public class FFluidEQ extends FFluidBasic {
 		boolean[] diag2 = { false, true };
 
 		/// System.out.println("len");
-		for (Direction dir : FFluidStatic.getRandomizedDirections(w.getRandom(), false)) {
+		for (Direction dir : FFluidStatic.getRandomizedDirections(random, false)) {
 			for (boolean diag : diag2) {
 
 				boolean selPosb2 = false;
