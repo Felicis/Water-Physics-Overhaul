@@ -826,6 +826,14 @@ public class FluidStatic {
         }
     }
 
+//    public static void scheduleBlockTick(IWorld world, BlockPos pos) {
+//        if (world.hasChunkAt(pos)) { // fluids should not gen chunks (but if not ticking should tick once they're ticking again)
+//            Block block = world.getBlockState(pos).getBlock();
+//            world.getBlockTicks().scheduleTick(pos, block, 1); // does not schedule duplicate
+//            // ticking chunk check not needed, because not ticking chunks do not process their ticks until they start ticking again
+//        }
+//    }
+
     public static FluidFlowCache getFlowCache(World world) { // encapsulate mixin casting
         return ((WorldMixinInterface) world).getFlowCache();
     }

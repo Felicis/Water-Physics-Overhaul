@@ -1,4 +1,4 @@
-package net.skds.wpo;
+package net.skds.wpo.events;
 
 import net.minecraftforge.event.entity.player.FillBucketEvent;
 import net.minecraftforge.event.world.BlockEvent;

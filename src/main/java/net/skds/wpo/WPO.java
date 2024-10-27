@@ -1,6 +1,7 @@
 package net.skds.wpo;
 
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
@@ -8,10 +9,13 @@ import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.skds.wpo.client.ClientEvents;
 import net.skds.wpo.config.WPOConfig;
+import net.skds.wpo.events.OtherEvents;
+import net.skds.wpo.events.WPOEvents;
 import net.skds.wpo.network.PacketHandler;
 import net.skds.wpo.registry.WPO_Entities;
 import net.skds.wpo.registry.WPO_Blocks;
 import net.skds.wpo.registry.WPO_Items;
+import net.skds.wpo.commands.ExportFluidStatesCommand;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -28,13 +32,15 @@ public class WPO
 
     public WPO() {
         FMLJavaModLoadingContext.get().getModEventBus().addListener(this::setup);
+//        FMLJavaModLoadingContext.get().getModEventBus().addListener(this::registerCommands);
         FMLJavaModLoadingContext.get().getModEventBus().addListener(this::onConfigLoad);
         FMLJavaModLoadingContext.get().getModEventBus().addListener(this::doClientStuff);
 
         // Register ourselves for server and other game events we are interested in
         MinecraftForge.EVENT_BUS.register(WPO_EVENTS);
+        MinecraftForge.EVENT_BUS.register(OtherEvents);
         MinecraftForge.EVENT_BUS.register(this);
-      
+
         WPOConfig.init();
         WPO_Items.register();
         WPO_Blocks.register();
@@ -44,6 +50,7 @@ public class WPO
     
 
     private void setup(final FMLCommonSetupEvent event) {
+        LOGGER.debug("WPO:setup");
     }
 
     public void onConfigLoad(ModConfig.ModConfigEvent event) {
@@ -52,5 +59,11 @@ public class WPO
 
     private void doClientStuff(final FMLClientSetupEvent event) {  
         ClientEvents.setup(event);
+    }
+
+//    @SubscribeEvent
+    public void registerCommands(RegisterCommandsEvent event) {
+        LOGGER.debug("WPO:registerCommands");
+        ExportFluidStatesCommand.register(event.getDispatcher());
     }
 }

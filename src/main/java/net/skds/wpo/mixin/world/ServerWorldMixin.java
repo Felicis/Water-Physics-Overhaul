@@ -18,6 +18,7 @@ import net.minecraft.world.server.ServerChunkProvider;
 import net.minecraft.world.server.ServerWorld;
 import net.minecraft.world.storage.ISpawnWorldInfo;
 import net.minecraftforge.common.extensions.IForgeWorldServer;
+import net.skds.wpo.fluidphysics.FluidFlowCache;
 import net.skds.wpo.mixininterfaces.*;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -28,6 +29,13 @@ import java.util.function.Supplier;
 
 @Mixin(ServerWorld.class)
 public abstract class ServerWorldMixin extends World implements WorldMixinInterface, IWorldMixinInterface, IWorldWriterMixinInterface, ISeedReader, IForgeWorldServer {
+//    private final FluidFlowCache flowCache = new FluidFlowCache(); // empty at start, fill as fluids tick and compute flow
+//
+//    @Override
+//    public FluidFlowCache getFlowCache() {
+//        return flowCache;
+//    }
+
     @Shadow
     public abstract ServerChunkProvider getChunkSource();
 
