@@ -3,9 +3,6 @@
 I am stopping development on this mod in favor of https://www.curseforge.com/minecraft/mc-mods/flowing-fluids by Traben.
 
 
-https://www.curseforge.com/minecraft/mc-mods/realistic-fluid-flows
-
--- video/images coming soon --
 
 ## Concept
 This mod completely overhauls the vanilla fluid dynamics in minecraft to add more realistic fluid dynamics, which include:
