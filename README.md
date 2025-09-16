@@ -1,4 +1,7 @@
-# Water Physics Overhaul (1.16, 1.18 coming soon)
+# [Development Stopped] Water Physics Overhaul (1.16, 1.18 coming soon)
+
+I am stopping development on this mod in favor of https://www.curseforge.com/minecraft/mc-mods/flowing-fluids by Traben.
+
 
 https://www.curseforge.com/minecraft/mc-mods/realistic-fluid-flows
 
